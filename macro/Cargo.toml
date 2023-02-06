@@ -1,0 +1,22 @@
+[package]
+name = "promise-ruleset-derive"
+version = "0.0.1"
+description = "Procedural macro for automating the implementation of the Promise program."
+authors = ["Developers <tyronemichael@gmail.com>"]
+autotests = false
+publish = false
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[[test]]
+name = "tests"
+path = "tests/macro-tests.rs"
+
+[dev-dependencies]
+trybuild = "1.0"
+
+[dependencies]
+syn = { version = "1.0.98", features = ["extra-traits"] }
+quote = "1.0.23"
