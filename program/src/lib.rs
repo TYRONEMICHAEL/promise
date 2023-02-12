@@ -1,6 +1,6 @@
 pub mod errors;
 pub mod instructions;
-pub mod ruleset;
+pub mod promisor_ruleset;
 pub mod state;
 pub mod utils;
 

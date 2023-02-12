@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     errors::PromiseError,
-    ruleset::EvaluationContext,
+    promisor_ruleset::EvaluationContext,
     state::{promise_network::Rules, promisor::PromisorState, PromiseNetwork, Promisor},
 };
 
@@ -43,8 +43,9 @@ pub fn initialize_promisor(ctx: Context<InitializePromisor>, bump: u8) -> Result
         indices: BTreeMap::new(),
     };
 
-    for condition in conditions {
-        condition.validate(&ctx, &mut evaluation_context)?
+    for condition in &conditions {
+        condition.validate(&ctx, &mut evaluation_context)?;
+        condition.pre_action(&ctx, &mut evaluation_context)?;
     }
 
     let promisor = &mut ctx.accounts.promisor;
