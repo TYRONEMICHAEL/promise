@@ -1,6 +1,7 @@
 pub mod errors;
 pub mod instructions;
 pub mod promisor_ruleset;
+pub mod promise_ruleset;
 pub mod state;
 pub mod utils;
 

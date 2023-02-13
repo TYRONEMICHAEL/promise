@@ -1,6 +1,6 @@
 use crate::{
     errors::PromiseError,
-    state::{promise_network::Rules, PromiseNetwork},
+    state::{promise_network::NetworkRules, PromiseNetwork},
 };
 use anchor_lang::prelude::*;
 #[derive(Accounts)]
@@ -24,7 +24,7 @@ pub fn initialize_network(ctx: Context<InitializeNetwork>, data: Vec<u8>, bump: 
     promise_network.bump = bump;
     promise_network.authority = ctx.accounts.authority.key();
 
-    match Rules::try_from_slice(&data) {
+    match NetworkRules::try_from_slice(&data) {
         Ok(_) => (),
         Err(e) => {
             msg!("Error deserializing ruleset: {}", e);

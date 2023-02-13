@@ -24,7 +24,7 @@ pub struct Promisee {
 }
 
 impl Promisee {
-  pub const SEED_PREFIX: &'static [u8] = b"promisor";
+  pub const SEED_PREFIX: &'static [u8] = b"promisee";
   pub const SIZE: usize = 
     8 +
     8 + // bump

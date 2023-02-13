@@ -1,6 +1,6 @@
 use crate::{
     errors::PromiseError,
-    state::{promise_network::Rules, PromiseNetwork},
+    state::{promise_network::NetworkRules, PromiseNetwork},
 };
 use anchor_lang::{
     prelude::*,
@@ -24,7 +24,7 @@ pub struct UpdateNetwork<'info> {
 
 pub fn update_network(ctx: Context<UpdateNetwork>, data: Vec<u8>) -> Result<()> {
     // tries to deserialize the data to make sure it's valid
-    match Rules::try_from_slice(&data) {
+    match NetworkRules::try_from_slice(&data) {
         Ok(rules) => rules,
         Err(e) => {
             msg!("Error deserializing ruleset: {}", e);

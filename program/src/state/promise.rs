@@ -1,4 +1,7 @@
 use anchor_lang::prelude::*;
+use crate::promise_ruleset::{Rule, SolWager};
+use crate::promise_ruleset::Condition;
+use promise_ruleset_derive::Ruleset;
 
 #[derive(Clone, Debug, PartialEq, Eq, AnchorSerialize, AnchorDeserialize)]
 #[repr(u8)]
@@ -34,6 +37,13 @@ pub struct Promise {
     // The number of promises this promisor has made
     pub num_promises: i32,
 }
+
+#[derive(Ruleset, AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct PromiseRules {
+    /// End date rule (controls when a promisor account is created).
+    pub sol_wager: Option<SolWager>,
+}
+
 
 impl Promise {
     pub const SEED_PREFIX: &'static [u8] = b"promise";

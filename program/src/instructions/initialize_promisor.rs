@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use crate::{
     errors::PromiseError,
     promisor_ruleset::EvaluationContext,
-    state::{promise_network::Rules, promisor::PromisorState, PromiseNetwork, Promisor},
+    state::{promise_network::NetworkRules, promisor::PromisorState, PromiseNetwork, Promisor},
 };
 
 #[derive(Accounts)]
@@ -28,7 +28,7 @@ pub struct InitializePromisor<'info> {
 pub fn initialize_promisor(ctx: Context<InitializePromisor>, bump: u8) -> Result<()> {
     let promise_network = &ctx.accounts.promise_network;
 
-    let rules = match Rules::try_from_slice(&promise_network.data) {
+    let rules = match NetworkRules::try_from_slice(&promise_network.data) {
         Ok(rules) => rules,
         Err(e) => {
             msg!("Error deserializing ruleset: {}", e);

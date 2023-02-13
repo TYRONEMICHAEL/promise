@@ -18,4 +18,6 @@ pub enum PromiseError {
     PublicKeyMismatch,
     #[msg("Missing the required NFT")]
     MissingRequiredNFT,
+    #[msg("Promisor account not active")]
+    PromisorNotActive,
 }

@@ -14,7 +14,7 @@ pub struct PromiseNetwork {
 }
 
 #[derive(Ruleset, AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct Rules {
+pub struct NetworkRules {
     /// Start date rule (controls when a promisor account is created).
     pub start_date: Option<StartDate>,
     /// End date rule (controls when a promisor account is created).
