@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 pub struct InitializePromise<'info> {
     #[account(
       init,
-      payer = promisor,
+      payer = promisor_owner,
       space = Promise::DATA_OFFSET + data.len(),
       seeds = [
         Promise::SEED_PREFIX,
@@ -16,8 +16,10 @@ pub struct InitializePromise<'info> {
       bump
   )]
     pub promise: Account<'info, Promise>,
-    #[account(mut)]
+    #[account(mut, constraint = promisor_owner.key() == promisor.owner.key())]
     pub promisor: Account<'info, Promisor>,
+    #[account(mut)]
+    pub promisor_owner: Signer<'info>,
     pub promise_network: Account<'info, PromiseNetwork>,
     pub system_program: Program<'info, System>,
 }
@@ -37,7 +39,7 @@ pub fn initialize_promise(ctx: Context<InitializePromise>, data: Vec<u8>, ends_a
         msg!("Error deserializing ruleset: {}", e);
         return Err(PromiseError::DeserializationError.into());
     }
-}
+  }
 
   promisor.num_promises += 1;
 

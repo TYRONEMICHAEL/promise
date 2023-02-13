@@ -12,7 +12,7 @@ describe("promise", () => {
   setProvider(AnchorProvider.env());
   const program = workspace.Promise as Program<PromiseAccount>;
 
-  it("A promisor can be initialized with a set of network rules", async () => {
+  it("A promise can be initialized", async () => {
     const { connection } = getProvider();
     const networkAuthority = web3.Keypair.generate();
     const promisorOwner = web3.Keypair.generate();
@@ -49,10 +49,7 @@ describe("promise", () => {
       program.programId
     );
 
-    const ruleset = new Ruleset(
-      StartDate.fromDate(new Date(Date.now() - 86400000)),
-    );
-
+    const ruleset = new Ruleset();
     const serialized = serialize(ruleset);
 
     await program.methods
@@ -87,89 +84,31 @@ describe("promise", () => {
       promisorAccount
     );
 
-    expect(promisor.owner.toBase58()).to.equal(promisorOwner.publicKey.toBase58());
-    expect(promisor.promiseNetwork.toBase58()).to.equal(networkAccount.toBase58());
-    expect(promisor.state["active"]).to.not.be.undefined;
-    expect(promisor.bump).to.equal(promisorAccountBump);
-    expect(promisor.numPromises).to.equal(0);
-  });
-  
-  it("A promisor cannot be initialized with a set of network rules", async () => {
-    const { connection } = getProvider();
-    const networkAuthority = web3.Keypair.generate();
-    const promisorOwner = web3.Keypair.generate();
-    
-    const a1 = await connection.requestAirdrop(
-      networkAuthority.publicKey,
-      LAMPORTS_PER_SOL
-    );
-
-    const a2 = await connection.requestAirdrop(
-      promisorOwner.publicKey,
-      LAMPORTS_PER_SOL
-    );
-
-    const latestBlockHash = await connection.getLatestBlockhash();
-
-    await connection.confirmTransaction({
-      blockhash: latestBlockHash.blockhash,
-      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-      signature: a1,
-    });
-
-    await connection.confirmTransaction({
-      blockhash: latestBlockHash.blockhash,
-      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-      signature: a2,
-    });
-
-    const [networkAccount, networkAccountBump] = await PublicKey.findProgramAddress(
+    const [promiseAccount, promiseAccountBump] = await PublicKey.findProgramAddress(
       [
-        utils.bytes.utf8.encode("promise_network"),
-        networkAuthority.publicKey.toBuffer(), 
+        utils.bytes.utf8.encode("promise"),
+        networkAccount.toBuffer(),
+        promisorAccount.toBuffer(),
+        new BN(promisor.numPromises + 1).toArrayLike(Buffer, "le", 4),
       ],
       program.programId
     );
-
-    const ruleset = new Ruleset(
-      undefined,
-      EndDate.fromDate(new Date(Date.now() - 86400000)), // ended yesterday
-    );
-
-    const serialized = serialize(ruleset);
 
     await program.methods
-      .initializeNetwork(serialized, networkAccountBump)
+      .initializePromise(serialized, new BN(0), promiseAccountBump)
       .accounts({
+        promise: promiseAccount,
+        promisor: promisorAccount,
         promiseNetwork: networkAccount,
-        authority: networkAuthority.publicKey,
+        promisorOwner: promisorOwner.publicKey,
       })
-      .signers([networkAuthority])
+      .signers([promisorOwner])
       .rpc();
 
-    const [promisorAccount, promisorAccountBump] = await PublicKey.findProgramAddress(
-      [
-        utils.bytes.utf8.encode("promisor"),
-        networkAccount.toBuffer(),
-        promisorOwner.publicKey.toBuffer(),
-      ],
-      program.programId
+    const updatedPromisor = await program.account.promisor.fetch(
+      promisorAccount
     );
 
-    try {
-      await program.methods
-        .initializePromisor(promisorAccountBump)
-        .accounts({
-          promisor: promisorAccount,
-          owner: promisorOwner.publicKey,
-          promiseNetwork: networkAccount,
-        })
-        .signers([promisorOwner])
-      .rpc();
-
-      throw new Error("Should not be able to initialize promisor");
-    } catch (e) {
-      expect(e.message).to.contain('PromisorAccountCreationExpired');
-    }
+    expect(updatedPromisor.numPromises).to.equal(1);
   });
 });

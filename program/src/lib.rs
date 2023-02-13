@@ -37,4 +37,8 @@ pub mod promise {
     ) -> Result<()> {
         instructions::update_promisor(ctx, state)
     }
+
+    pub fn initialize_promise<'info>(ctx: Context<InitializePromise>, data: Vec<u8>, ends_at: i64, bump: u8) -> Result<()> {
+        instructions::initialize_promise(ctx, data, ends_at, bump)
+    }
 }
