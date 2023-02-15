@@ -45,6 +45,9 @@ pub fn initialize_promisor(ctx: Context<InitializePromisor>, bump: u8) -> Result
 
     for condition in &conditions {
         condition.validate(&ctx, &mut evaluation_context)?;
+    }
+
+    for condition in &conditions {
         condition.pre_action(&ctx, &mut evaluation_context)?;
     }
 

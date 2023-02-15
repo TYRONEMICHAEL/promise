@@ -2,13 +2,13 @@
 import { AnchorProvider, BN, getProvider, Program, setProvider, utils, web3, workspace } from "@project-serum/anchor";
 import { expect } from "chai";
 import { Promise as PromiseAccount } from "../target/types/promise";
-import { Keypair, PublicKey } from "@solana/web3.js";
-import { EndDate, NftGate, Ruleset, StartDate } from "./schema";
-import { serialize, deserialize } from "@dao-xyz/borsh";
+import { PublicKey } from "@solana/web3.js";
+import { PromiseRuleset, NetworkRuleset, StartDate } from "./schema";
+import { serialize } from "@dao-xyz/borsh";
 
 const LAMPORTS_PER_SOL = 1000000000;
 
-describe("promise", () => {
+describe.only("promise", () => {
   setProvider(AnchorProvider.env());
   const program = workspace.Promise as Program<PromiseAccount>;
 
@@ -49,11 +49,11 @@ describe("promise", () => {
       program.programId
     );
 
-    const ruleset = new Ruleset();
-    const serialized = serialize(ruleset);
+    const networkRuleset = new NetworkRuleset();
+    const networkSerialized = serialize(networkRuleset);
 
     await program.methods
-      .initializeNetwork(serialized, networkAccountBump)
+      .initializeNetwork(networkSerialized, networkAccountBump)
       .accounts({
         promiseNetwork: networkAccount,
         authority: networkAuthority.publicKey,
@@ -94,8 +94,12 @@ describe("promise", () => {
       program.programId
     );
 
+    const promiseRuleset = new PromiseRuleset();
+    const promiseSerialized = serialize(promiseRuleset);
+    const endsAt = Math.floor((new Date()).getTime() / 1000);
+
     await program.methods
-      .initializePromise(serialized, new BN(0), promiseAccountBump)
+      .initializePromise(promiseSerialized, new BN(endsAt), promiseAccountBump)
       .accounts({
         promise: promiseAccount,
         promisor: promisorAccount,
@@ -109,6 +113,19 @@ describe("promise", () => {
       promisorAccount
     );
 
+    const promise = await program.account.promise.fetch(
+      promiseAccount
+    );
+    
     expect(updatedPromisor.numPromises).to.equal(1);
+    expect(promise.state["created"]).to.not.be.undefined;
+    expect((new BN(promise.endsAt)).toNumber()).to.equal(endsAt);
+    expect(promise.data).to.deep.equal(promiseSerialized);
+    expect(promisor.numPromises).to.equal(0);
+    expect(promise.createdAt).to.be.not.be.undefined;
+    expect(promise.updatedAt).to.be.not.be.undefined;
+    expect(promise.network.toBase58()).to.equal(networkAccount.toBase58());
+    expect(promise.promisor.toBase58()).to.equal(promisorAccount.toBase58());
+    expect(promise.bump).to.equal(promiseAccountBump);
   });
 });

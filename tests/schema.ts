@@ -40,7 +40,7 @@ export class NftGate {
   }
 } 
 
-export class Ruleset {
+export class NetworkRuleset {
   @field({ type: option(StartDate) })
   startDate: StartDate;
   
@@ -56,3 +56,17 @@ export class Ruleset {
     this.nftGate = nftGate;
   }
 };
+
+export class SolWager {
+  @field({type: 'u64'})
+  amount: number
+  
+  constructor(amount: number) {
+    this.amount = amount;
+  }
+}
+
+export class PromiseRuleset {
+  @field({ type: option(SolWager) })
+  solWager: SolWager;
+}

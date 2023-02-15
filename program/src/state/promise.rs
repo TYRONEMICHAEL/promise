@@ -35,7 +35,7 @@ pub struct Promise {
     // The end date for the promise
     pub ends_at: i64,
     // The number of promises this promisor has made
-    pub num_promises: i32,
+    pub num_promisees: i32,
 }
 
 #[derive(Ruleset, AnchorSerialize, AnchorDeserialize, Clone, Debug)]

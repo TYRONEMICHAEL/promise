@@ -1,10 +1,10 @@
 // import { serialize } from "borsh";
-import { AnchorProvider, BN, getProvider, Program, setProvider, utils, web3, workspace } from "@project-serum/anchor";
+import { AnchorProvider, getProvider, Program, setProvider, utils, web3, workspace } from "@project-serum/anchor";
 import { expect } from "chai";
 import { Promise as PromiseAccount } from "../target/types/promise";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { EndDate, NftGate, Ruleset, StartDate } from "./schema";
-import { serialize, deserialize } from "@dao-xyz/borsh";
+import { NetworkRuleset as Ruleset, StartDate } from "./schema";
+import { serialize } from "@dao-xyz/borsh";
 
 const LAMPORTS_PER_SOL = 1000000000;
 
