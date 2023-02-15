@@ -8,7 +8,7 @@ import { serialize } from "@dao-xyz/borsh";
 
 const LAMPORTS_PER_SOL = 1000000000;
 
-describe.only("promise", () => {
+describe("promise", () => {
   setProvider(AnchorProvider.env());
   const program = workspace.Promise as Program<PromiseAccount>;
 
