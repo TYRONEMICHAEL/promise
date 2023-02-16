@@ -1,24 +1,30 @@
 use std::collections::BTreeMap;
+
 use anchor_lang::prelude::Context;
-mod sol_reward;
+
+mod end_date;
+mod nft_gate;
+mod start_date;
 
 pub use anchor_lang::prelude::*;
-pub use sol_reward::SolReward;
+pub use end_date::EndDate;
+pub use nft_gate::NftGate;
+pub use start_date::StartDate;
 
-use crate::instructions::initialize_promise::InitializePromise;
+use crate::instructions::initialize_promisor::InitializePromisor;
 
 pub trait Condition {
     // Validate the inputs pass the condition.
     fn validate<'info>(
         &self,
-        ctx: &Context<InitializePromise<'info>>,
+        ctx: &Context<InitializePromisor<'info>>,
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()>;
 
     // Perform any pre-action logic.
     fn pre_action<'info>(
-        &self,      
-        _ctx: &Context<InitializePromise<'info>>,
+        &self,
+        _ctx: &Context<InitializePromisor<'info>>,
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())
@@ -27,7 +33,7 @@ pub trait Condition {
     // Perform any post-action logic.
     fn post_action<'info>(
         &self,
-        _ctx: &Context<InitializePromise<'info>>,
+        _ctx: &Context<InitializePromisor<'info>>,
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())

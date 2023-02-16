@@ -1,4 +1,4 @@
-use crate::promisor_ruleset::{Condition, EndDate, NftGate, Rule, StartDate};
+use crate::network_ruleset::{Condition, EndDate, NftGate, Rule, StartDate};
 use anchor_lang::prelude::*;
 use promise_ruleset_derive::Ruleset;
 

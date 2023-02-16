@@ -20,4 +20,6 @@ pub enum PromiseError {
     MissingRequiredNFT,
     #[msg("Promisor account not active")]
     PromisorNotActive,
+    #[msg("Invalid promise state")]
+    InvalidPromiseState,
 }

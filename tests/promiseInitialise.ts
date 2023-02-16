@@ -3,7 +3,7 @@ import { AnchorProvider, BN, getProvider, Program, setProvider, utils, web3, wor
 import { expect } from "chai";
 import { Promise as PromiseAccount } from "../target/types/promise";
 import { PublicKey } from "@solana/web3.js";
-import { PromiseRuleset, NetworkRuleset, StartDate } from "./schema";
+import { PromiseeRuleset, PromisorRuleset, NetworkRuleset, StartDate } from "./schema";
 import { serialize } from "@dao-xyz/borsh";
 
 const LAMPORTS_PER_SOL = 1000000000;
@@ -94,12 +94,16 @@ describe("promise", () => {
       program.programId
     );
 
-    const promiseRuleset = new PromiseRuleset();
-    const promiseSerialized = serialize(promiseRuleset);
+    const promiseeRuleset = new PromiseeRuleset();
+    const promiseeSerialized = serialize(promiseeRuleset);
+
+    const promisorRuleset = new PromisorRuleset();
+    const promisorSerialized = serialize(promisorRuleset);
+
     const endsAt = Math.floor((new Date()).getTime() / 1000);
 
     await program.methods
-      .initializePromise(promiseSerialized, new BN(endsAt), promiseAccountBump)
+      .initializePromise(promisorSerialized, promiseeSerialized, new BN(endsAt), promiseAccountBump)
       .accounts({
         promise: promiseAccount,
         promisor: promisorAccount,
@@ -120,7 +124,8 @@ describe("promise", () => {
     expect(updatedPromisor.numPromises).to.equal(1);
     expect(promise.state["created"]).to.not.be.undefined;
     expect((new BN(promise.endsAt)).toNumber()).to.equal(endsAt);
-    expect(promise.data).to.deep.equal(promiseSerialized);
+    expect(promise.promiseeData).to.deep.equal(promiseeSerialized);
+    expect(promise.promisorData).to.deep.equal(promisorSerialized);
     expect(promisor.numPromises).to.equal(0);
     expect(promise.createdAt).to.be.not.be.undefined;
     expect(promise.updatedAt).to.be.not.be.undefined;

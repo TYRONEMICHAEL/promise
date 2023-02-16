@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     errors::PromiseError,
-    promisor_ruleset::EvaluationContext,
+    network_ruleset::EvaluationContext,
     state::{promise_network::NetworkRules, promisor::PromisorState, PromiseNetwork, Promisor},
 };
 

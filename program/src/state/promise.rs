@@ -1,7 +1,4 @@
 use anchor_lang::prelude::*;
-use crate::promise_ruleset::{Rule, SolWager};
-use crate::promise_ruleset::Condition;
-use promise_ruleset_derive::Ruleset;
 
 #[derive(Clone, Debug, PartialEq, Eq, AnchorSerialize, AnchorDeserialize)]
 #[repr(u8)]
@@ -26,8 +23,10 @@ pub struct Promise {
     pub promisor: Pubkey,
     // Promist state
     pub state: PromiseState,
-    // List of rules
-    pub data: Vec<u8>,
+    // List of rules for the promisee
+    pub promisee_data: Vec<u8>,
+    // List of rules for the promisor
+    pub promisor_data: Vec<u8>,
     // The last time this promise was updated
     pub updated_at: i64,
     // The created date for the promise
@@ -38,16 +37,9 @@ pub struct Promise {
     pub num_promisees: i32,
 }
 
-#[derive(Ruleset, AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct PromiseRules {
-    /// End date rule (controls when a promisor account is created).
-    pub sol_wager: Option<SolWager>,
-}
-
-
 impl Promise {
     pub const SEED_PREFIX: &'static [u8] = b"promise";
-    pub const DATA_OFFSET: usize = 8 +
+    pub const DATA_OFFSET: usize = 8 + 8 +
     8 + // bump
     32 + // network
     32 + // promisor
@@ -59,7 +51,8 @@ impl Promise {
 
     pub fn account_size(&self) -> usize {
         let mut size = Promise::DATA_OFFSET;
-        size += self.data.len(); // data
+        size += self.promisee_data.len(); // data
+        size += self.promisor_data.len(); // data
         size
     }
 }

@@ -1,12 +1,12 @@
-use crate::{state::{Promise, PromiseNetwork, Promisor, PromisorState, PromiseState, PromiseRules}, errors::PromiseError};
+use crate::{state::{Promise, PromiseNetwork, Promisor, PromisorState, PromiseState, PromiseeRules, PromisorRules}, errors::PromiseError};
 use anchor_lang::prelude::*;
 #[derive(Accounts)]
-#[instruction(data: Vec<u8>, ends_at: i64, bump: u8)]
+#[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>, ends_at: i64, bump: u8)]
 pub struct InitializePromise<'info> {
     #[account(
       init,
       payer = promisor_owner,
-      space = Promise::DATA_OFFSET + data.len(),
+      space = Promise::DATA_OFFSET + promisor_data.len() + promisee_data.len(),
       seeds = [
         Promise::SEED_PREFIX,
         promise_network.key().as_ref(),
@@ -24,7 +24,7 @@ pub struct InitializePromise<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn initialize_promise(ctx: Context<InitializePromise>, data: Vec<u8>, ends_at: i64, bump: u8) -> Result<()> {
+pub fn initialize_promise(ctx: Context<InitializePromise>, promisor_data: Vec<u8>, promisee_data: Vec<u8>, ends_at: i64, bump: u8) -> Result<()> {
   let promise_network = &mut ctx.accounts.promise_network;
   let promisor = &mut ctx.accounts.promisor;
   let promise = &mut ctx.accounts.promise;
@@ -33,10 +33,18 @@ pub fn initialize_promise(ctx: Context<InitializePromise>, data: Vec<u8>, ends_a
     return Err(PromiseError::PromisorNotActive.into());
   }
 
-  match PromiseRules::try_from_slice(&data) {
+  match PromisorRules::try_from_slice(&promisor_data) {
     Ok(_) => (),
     Err(e) => {
-        msg!("Error deserializing ruleset: {}", e);
+        msg!("Error deserializing promisor ruleset: {}", e);
+        return Err(PromiseError::DeserializationError.into());
+    }
+  }
+
+  match PromiseeRules::try_from_slice(&promisee_data) {
+    Ok(_) => (),
+    Err(e) => {
+        msg!("Error deserializing promisee ruleset: {}", e);
         return Err(PromiseError::DeserializationError.into());
     }
   }
@@ -46,10 +54,14 @@ pub fn initialize_promise(ctx: Context<InitializePromise>, data: Vec<u8>, ends_a
   promise.network = promise_network.key();
   promise.promisor = promisor.key();
   promise.bump = bump;
-  promise.data = data;
+  promise.promisor_data = promisor_data;
+  promise.promisee_data = promisee_data;
   promise.state = PromiseState::Created;
   promise.created_at = Clock::get()?.unix_timestamp;
   promise.updated_at = Clock::get()?.unix_timestamp;
   promise.ends_at = ends_at;
+
+  // Run the validate ruleset here
+  // SOL stake as an example
   Ok(())
 }

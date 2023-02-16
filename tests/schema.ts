@@ -66,7 +66,21 @@ export class SolWager {
   }
 }
 
-export class PromiseRuleset {
+export class PromiseeRuleset {
   @field({ type: option(SolWager) })
   solWager: SolWager;
+}
+
+export class SolReward {
+  @field({type: 'u64'})
+  amount: number
+  
+  constructor(amount: number) {
+    this.amount = amount;
+  }
+}
+
+export class PromisorRuleset {
+  @field({ type: option(SolReward) })
+  solReward: SolReward;
 }

@@ -1,24 +1,23 @@
 use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct SolWager {
+pub struct SolReward {
     pub amount: i64,
 }
 
-impl Rule for SolWager {
+impl Rule for SolReward {
     fn size() -> usize {
+        8 + // Amount
         32 // Pubkey
     }
 }
 
-impl Condition for SolWager {
+impl Condition for SolReward {
     fn validate<'info>(
         &self,
-        _promisee: &Pubkey,
         _ctx: &Context<InitializePromise>,
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
-        // TODO: Check for required lamports.
         Ok(())
     }
 }
