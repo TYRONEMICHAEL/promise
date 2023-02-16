@@ -1,4 +1,6 @@
-use crate::{state::{Promise, PromiseNetwork, Promisor, PromisorState, PromiseState, PromiseeRules, PromisorRules}, errors::PromiseError};
+use std::collections::BTreeMap;
+
+use crate::{state::{Promise, PromiseNetwork, Promisor, PromisorState, PromiseState, PromiseeRules, PromisorRules}, errors::PromiseError, promisor_ruleset::EvaluationContext};
 use anchor_lang::prelude::*;
 #[derive(Accounts)]
 #[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>, ends_at: i64, bump: u8)]
@@ -25,20 +27,31 @@ pub struct InitializePromise<'info> {
 }
 
 pub fn initialize_promise(ctx: Context<InitializePromise>, promisor_data: Vec<u8>, promisee_data: Vec<u8>, ends_at: i64, bump: u8) -> Result<()> {
-  let promise_network = &mut ctx.accounts.promise_network;
+  let rules = match PromisorRules::try_from_slice(&promisor_data) {
+    Ok(rules) => rules,
+    Err(e) => {
+        msg!("Error deserializing promisor ruleset: {}", e);
+        return Err(PromiseError::DeserializationError.into());
+    }
+  };
+
+  let conditions = rules.enabled_conditions();
+
+  let mut evaluation_context = EvaluationContext {
+    account_cursor: 0,
+    indices: BTreeMap::new(),
+  };
+
+  for condition in &conditions {
+    condition.validate(&ctx, &mut evaluation_context)?;
+  }
+  
+  let promise_network = &ctx.accounts.promise_network;
   let promisor = &mut ctx.accounts.promisor;
   let promise = &mut ctx.accounts.promise;
 
   if promisor.state != PromisorState::Active {
     return Err(PromiseError::PromisorNotActive.into());
-  }
-
-  match PromisorRules::try_from_slice(&promisor_data) {
-    Ok(_) => (),
-    Err(e) => {
-        msg!("Error deserializing promisor ruleset: {}", e);
-        return Err(PromiseError::DeserializationError.into());
-    }
   }
 
   match PromiseeRules::try_from_slice(&promisee_data) {

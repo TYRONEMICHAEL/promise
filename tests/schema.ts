@@ -73,14 +73,18 @@ export class PromiseeRuleset {
 
 export class SolReward {
   @field({type: 'u64'})
-  amount: number
+  lamports: number
   
-  constructor(amount: number) {
-    this.amount = amount;
+  constructor(lamports: number) {
+    this.lamports = lamports;
   }
 }
 
 export class PromisorRuleset {
   @field({ type: option(SolReward) })
   solReward: SolReward;
+
+  public constructor(solReward?: SolReward) {
+    this.solReward = solReward;
+  }
 }

@@ -22,4 +22,6 @@ pub enum PromiseError {
     PromisorNotActive,
     #[msg("Invalid promise state")]
     InvalidPromiseState,
+    #[msg("Not enough SOL")]
+    NotEnoughSOL,
 }
