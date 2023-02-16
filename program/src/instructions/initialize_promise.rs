@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 #[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>, ends_at: i64, bump: u8)]
 pub struct InitializePromise<'info> {
     #[account(
-      init,
+      init_if_needed,
       payer = promisor_owner,
       space = Promise::DATA_OFFSET + promisor_data.len() + promisee_data.len(),
       seeds = [

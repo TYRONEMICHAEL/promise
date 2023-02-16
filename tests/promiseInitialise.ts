@@ -134,7 +134,7 @@ describe("promise", () => {
     expect(promise.bump).to.equal(promiseAccountBump);
   });
 
-  it.only("A promise can be initialized with a promisor ruleset", async () => {
+  it("A promise can be initialized with a promisor ruleset", async () => {
     const { connection } = getProvider();
     const networkAuthority = web3.Keypair.generate();
     const promisorOwner = web3.Keypair.generate();
