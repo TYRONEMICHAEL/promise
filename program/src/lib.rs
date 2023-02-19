@@ -59,7 +59,7 @@ pub mod promise {
 
     pub fn update_promise_state<'info>(
         ctx: Context<UpdatePromise>,
-        state: PromiseState
+        state: PromiseState,
     ) -> Result<()> {
         instructions::update_promise_state(ctx, state)
     }

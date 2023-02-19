@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
 
-use anchor_lang::{prelude::*, solana_program::{program::invoke, system_instruction}};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke, system_instruction},
+};
 
 use crate::{
     errors::PromiseError,
     promisor_ruleset::EvaluationContext,
-    state::{promisor_rules::PromisorRules, PromiseState, PromisorState, Promise, Promisor},
+    state::{promisor_rules::PromisorRules, Promise, PromiseState, Promisor, PromisorState},
 };
 
 #[derive(Accounts)]
@@ -20,7 +23,11 @@ pub struct UpdatePromise<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn update_promise_rules(ctx: Context<UpdatePromise>, promisor_data: Vec<u8>, promisee_data: Vec<u8>) -> Result<()> {
+pub fn update_promise_rules(
+    ctx: Context<UpdatePromise>,
+    promisor_data: Vec<u8>,
+    promisee_data: Vec<u8>,
+) -> Result<()> {
     let rules = match PromisorRules::try_from_slice(&promisor_data) {
         Ok(rules) => rules,
         Err(e) => {
@@ -37,7 +44,12 @@ pub fn update_promise_rules(ctx: Context<UpdatePromise>, promisor_data: Vec<u8>,
     };
 
     for condition in &conditions {
-        condition.validate(&ctx.accounts.promisor, &ctx.accounts.promise, &ctx.remaining_accounts,  &mut evaluation_context)?;
+        condition.validate(
+            &ctx.accounts.promisor,
+            &ctx.accounts.promise,
+            &ctx.remaining_accounts,
+            &mut evaluation_context,
+        )?;
     }
 
     let promisor = &mut ctx.accounts.promisor;
@@ -49,7 +61,7 @@ pub fn update_promise_rules(ctx: Context<UpdatePromise>, promisor_data: Vec<u8>,
 
     let account_info = promise.to_account_info();
     let existing_size = promise.account_size();
-    let new_size = Promise::DATA_OFFSET + promisor_data.len() +  promisee_data.len();
+    let new_size = Promise::DATA_OFFSET + promisor_data.len() + promisee_data.len();
     let difference = new_size - existing_size;
 
     msg!("Existing size: {}", existing_size);
@@ -119,7 +131,12 @@ fn set_active(ctx: Context<UpdatePromise>, state: PromiseState) -> Result<()> {
     };
 
     for condition in &conditions {
-        condition.pre_action(&ctx.accounts.promisor, &ctx.accounts.promise, &ctx.remaining_accounts,  &mut evaluation_context)?;
+        condition.pre_action(
+            &ctx.accounts.promisor,
+            &ctx.accounts.promise,
+            &ctx.remaining_accounts,
+            &mut evaluation_context,
+        )?;
     }
 
     ctx.accounts.promise.state = state;

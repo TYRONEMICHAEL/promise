@@ -4,7 +4,7 @@ mod sol_reward;
 pub use anchor_lang::prelude::*;
 pub use sol_reward::SolReward;
 
-use crate::{state::{Promise, Promisor}};
+use crate::state::{Promise, Promisor};
 
 pub trait Condition {
     // Validate the inputs pass the condition.

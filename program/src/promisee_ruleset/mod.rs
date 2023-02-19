@@ -1,11 +1,11 @@
 use anchor_lang::prelude::Context;
 use std::collections::BTreeMap;
-mod sol_wager;
 mod promise_end_date;
+mod sol_wager;
 
 pub use anchor_lang::prelude::*;
-pub use sol_wager::SolWager;
 pub use promise_end_date::PromiseEndDate;
+pub use sol_wager::SolWager;
 
 use crate::instructions::initialize_promise::InitializePromise;
 

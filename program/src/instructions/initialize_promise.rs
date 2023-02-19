@@ -13,7 +13,7 @@ use anchor_lang::prelude::*;
 #[instruction(id: i32, promisor_data: Vec<u8>, promisee_data: Vec<u8>, bump: u8)]
 pub struct InitializePromise<'info> {
     #[account(
-      init_if_needed,
+      init,
       payer = promisor_owner,
       space = Promise::DATA_OFFSET + promisor_data.len() + promisee_data.len(),
       seeds = [
@@ -56,7 +56,12 @@ pub fn initialize_promise(
     };
 
     for condition in &conditions {
-        condition.validate(&ctx.accounts.promisor, &ctx.accounts.promise, &ctx.remaining_accounts,  &mut evaluation_context)?;
+        condition.validate(
+            &ctx.accounts.promisor,
+            &ctx.accounts.promise,
+            &ctx.remaining_accounts,
+            &mut evaluation_context,
+        )?;
     }
 
     let promise_network = &ctx.accounts.promise_network;
@@ -74,7 +79,7 @@ pub fn initialize_promise(
             return Err(PromiseError::DeserializationError.into());
         }
     }
-    
+
     promisor.num_promises += 1;
     promise.id = id;
     promise.network = promise_network.key();

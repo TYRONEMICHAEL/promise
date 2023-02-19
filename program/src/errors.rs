@@ -27,5 +27,5 @@ pub enum PromiseError {
     #[msg("Promimse expired")]
     PromiseExpired,
     #[msg("Not enough accounts provided")]
-    NotEnoughAccounts
+    NotEnoughAccounts,
 }
