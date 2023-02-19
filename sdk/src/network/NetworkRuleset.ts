@@ -1,6 +1,6 @@
 import { deserialize, field, option, serialize } from "@dao-xyz/borsh";
-import { RulesetDate } from "./rulesets/RulsetDate";
-import { NftGate } from "./rulesets/NftGate";
+import { RulesetDate } from "../rules/RulsetDate";
+import { NftGate } from "../rules/NftGate";
 
 export class NetworkRuleset {
   @field({ type: option(RulesetDate) })

@@ -1,6 +1,6 @@
 import { deserialize, field, option, serialize } from "@dao-xyz/borsh";
-import { RulesetDate } from "./rulesets/RulsetDate";
-import { SolGate } from "./rulesets/SolGate";
+import { RulesetDate } from "../rules/RulsetDate";
+import { SolGate } from "../rules/SolGate";
 
 export class PromisorRuleset {
   @field({ type: option(SolGate) })
