@@ -1,24 +1,27 @@
 use std::collections::BTreeMap;
-use anchor_lang::prelude::Context;
 mod sol_reward;
 
 pub use anchor_lang::prelude::*;
 pub use sol_reward::SolReward;
 
-use crate::instructions::initialize_promise::InitializePromise;
+use crate::{state::{Promise, Promisor}};
 
 pub trait Condition {
     // Validate the inputs pass the condition.
     fn validate<'info>(
         &self,
-        ctx: &Context<InitializePromise<'info>>,
+        promisor: &Account<Promisor>,
+        promise: &Account<Promise>,
+        remaining_accounts: &[AccountInfo],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()>;
 
     // Perform any pre-action logic.
     fn pre_action<'info>(
-        &self,      
-        _ctx: &Context<InitializePromise<'info>>,
+        &self,
+        _promisor: &Account<Promisor>,
+        _promise: &Account<Promise>,
+        _remaining_accounts: &[AccountInfo],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())
@@ -27,7 +30,9 @@ pub trait Condition {
     // Perform any post-action logic.
     fn post_action<'info>(
         &self,
-        _ctx: &Context<InitializePromise<'info>>,
+        _promisor: &Account<Promisor>,
+        _promise: &Account<Promise>,
+        _remaining_accounts: &[AccountInfo],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())

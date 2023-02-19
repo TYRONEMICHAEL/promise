@@ -1,40 +1,28 @@
 use std::collections::BTreeMap;
 
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::{program::invoke, system_instruction}};
 
-use crate::{state::{PromiseState, promisor_rules::PromisorRules}, errors::PromiseError, promisor_ruleset::EvaluationContext};
+use crate::{
+    errors::PromiseError,
+    promisor_ruleset::EvaluationContext,
+    state::{promisor_rules::PromisorRules, PromiseState, PromisorState, Promise, Promisor},
+};
 
-use super::InitializePromise;
-
-pub fn update_promise(ctx: Context<InitializePromise>, state: PromiseState) -> Result<()> {
-    match state {
-        PromiseState::Created => {
-          return Err(PromiseError::InvalidPromiseState.into());
-        },
-        PromiseState::Active => {
-            if ctx.accounts.promise.state == PromiseState::Created {
-                return set_active(ctx, state);
-            }
-            return Err(PromiseError::InvalidPromiseState.into());
-        },
-        PromiseState::Completed => {
-          // Run the post_action ruleset here
-          return Err(PromiseError::InvalidPromiseState.into());
-        },
-        PromiseState::Voided => {
-          // Run the post_action ruleset here
-          return Err(PromiseError::InvalidPromiseState.into());
-        },
-        _ => {
-            return Err(PromiseError::InvalidPromiseState.into());
-        }
-    }
+#[derive(Accounts)]
+#[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>)]
+pub struct UpdatePromise<'info> {
+    #[account(mut, constraint = promisor.key() == promisor.key())]
+    pub promise: Account<'info, Promise>,
+    #[account(mut, constraint = promisor_owner.key() == promisor.owner.key())]
+    pub promisor: Account<'info, Promisor>,
+    #[account(mut)]
+    pub promisor_owner: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
-fn set_active(ctx: Context<InitializePromise>, state: PromiseState) -> Result<()> {
-    let promise = &ctx.accounts.promise;
-    let rules = match PromisorRules::try_from_slice(&promise.promisor_data) {
-    Ok(rules) => rules,
+pub fn update_promise_rules(ctx: Context<UpdatePromise>, promisor_data: Vec<u8>, promisee_data: Vec<u8>) -> Result<()> {
+    let rules = match PromisorRules::try_from_slice(&promisor_data) {
+        Ok(rules) => rules,
         Err(e) => {
             msg!("Error deserializing promisor ruleset: {}", e);
             return Err(PromiseError::DeserializationError.into());
@@ -49,7 +37,89 @@ fn set_active(ctx: Context<InitializePromise>, state: PromiseState) -> Result<()
     };
 
     for condition in &conditions {
-        condition.pre_action(&ctx, &mut evaluation_context)?;
+        condition.validate(&ctx.accounts.promisor, &ctx.accounts.promise, &ctx.remaining_accounts,  &mut evaluation_context)?;
+    }
+
+    let promisor = &mut ctx.accounts.promisor;
+    let promise = &mut ctx.accounts.promise;
+
+    if promisor.state != PromisorState::Active {
+        return Err(PromiseError::PromisorNotActive.into());
+    }
+
+    let account_info = promise.to_account_info();
+    let existing_size = promise.account_size();
+    let new_size = Promise::DATA_OFFSET + promisor_data.len() +  promisee_data.len();
+    let difference = new_size - existing_size;
+
+    msg!("Existing size: {}", existing_size);
+    msg!("New size: {}", new_size);
+
+    if difference > 0 {
+        msg!("Resizing account by {} bytes", difference);
+        let rent = Rent::get()?;
+        let new_minimum_balance = rent.minimum_balance(new_size);
+        let lamports_diff = new_minimum_balance.saturating_sub(account_info.lamports());
+        let funding_account = ctx.accounts.promisor_owner.to_account_info();
+
+        invoke(
+            &system_instruction::transfer(funding_account.key, account_info.key, lamports_diff),
+            &[
+                funding_account.clone(),
+                account_info.clone(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
+
+        promise.promisor_data = promisor_data;
+        promise.promisee_data = promisee_data;
+        // promise.updated_at = Clock::get()?.unix_timestamp;
+    } else {
+        // TODO: add a way to reclaim lamports
+    }
+
+    Ok(())
+}
+
+pub fn update_promise_state(ctx: Context<UpdatePromise>, state: PromiseState) -> Result<()> {
+    match state {
+        PromiseState::Created => Err(PromiseError::InvalidPromiseState.into()),
+        PromiseState::Active => {
+            if ctx.accounts.promise.state == PromiseState::Created {
+                return set_active(ctx, state);
+            }
+            Err(PromiseError::InvalidPromiseState.into())
+        }
+        PromiseState::Completed => {
+            // Run the post_action ruleset here
+            Err(PromiseError::InvalidPromiseState.into())
+        }
+        PromiseState::Voided => {
+            // Run the post_action ruleset here
+            Err(PromiseError::InvalidPromiseState.into())
+        }
+    }
+}
+
+fn set_active(ctx: Context<UpdatePromise>, state: PromiseState) -> Result<()> {
+    let promise = &ctx.accounts.promise;
+    let rules = match PromisorRules::try_from_slice(&promise.promisor_data) {
+        Ok(rules) => rules,
+        Err(e) => {
+            msg!("Error deserializing promisor ruleset: {}", e);
+            return Err(PromiseError::DeserializationError.into());
+        }
+    };
+
+    let conditions = rules.enabled_conditions();
+
+    let mut evaluation_context = EvaluationContext {
+        account_cursor: 0,
+        indices: BTreeMap::new(),
+    };
+
+    for condition in &conditions {
+        condition.pre_action(&ctx.accounts.promisor, &ctx.accounts.promise, &ctx.remaining_accounts,  &mut evaluation_context)?;
     }
 
     ctx.accounts.promise.state = state;

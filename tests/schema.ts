@@ -69,6 +69,8 @@ export class SolWager {
 export class PromiseeRuleset {
   @field({ type: option(SolWager) })
   solWager: SolWager;
+  @field({ type: option(EndDate) })
+  endDate: EndDate;
 }
 
 export class SolReward {

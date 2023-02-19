@@ -24,4 +24,8 @@ pub enum PromiseError {
     InvalidPromiseState,
     #[msg("Not enough SOL")]
     NotEnoughSOL,
+    #[msg("Promimse expired")]
+    PromiseExpired,
+    #[msg("Not enough accounts provided")]
+    NotEnoughAccounts
 }

@@ -1,4 +1,4 @@
-use crate::errors::PromiseError;
+use crate::{errors::PromiseError, utils::assert_keys_equal};
 
 use super::*;
 
@@ -9,18 +9,23 @@ pub struct SolReward {
 
 impl Rule for SolReward {
     fn size() -> usize {
-        8 + // Amount
-        32 // Pubkey
+        8
     }
 }
 
 impl Condition for SolReward {
     fn validate<'info>(
         &self,
-        ctx: &Context<InitializePromise>,
+        promisor: &Account<Promisor>,
+        _promise: &Account<Promise>,
+        remaining_accounts: &[AccountInfo],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
-        let promisor_owner = &ctx.accounts.promisor_owner;
+        if remaining_accounts.is_empty() {
+            return err!(PromiseError::NotEnoughAccounts);
+        }
+        let promisor_owner = remaining_accounts[0].clone();
+        assert_keys_equal(&promisor.owner, &promisor_owner.key())?;
         if promisor_owner.lamports() < self.lamports {
             msg!(
                 "Require {} lamports, accounts has {} lamports",

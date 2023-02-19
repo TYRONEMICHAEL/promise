@@ -17,6 +17,8 @@ pub enum PromiseState {
 pub struct Promise {
     // Bump seed
     pub bump: u8,
+    // Promise id
+    pub id: i32,
     // Network authority
     pub network: Pubkey,
     // Promisor account
@@ -31,22 +33,21 @@ pub struct Promise {
     pub updated_at: i64,
     // The created date for the promise
     pub created_at: i64,
-    // The end date for the promise
-    pub ends_at: i64,
-    // The number of promises this promisor has made
+    // The number of promisees that have accepted this promise
     pub num_promisees: i32,
 }
 
 impl Promise {
     pub const SEED_PREFIX: &'static [u8] = b"promise";
-    pub const DATA_OFFSET: usize = 8 + 8 +
+    // TODO: Check the OFFSETS
+    // Usually if the account cannot serialize it is because the offsets are wrong
+    pub const DATA_OFFSET: usize = 8 + 8 + 8 +
     8 + // bump
     32 + // network
     32 + // promisor
     1 + // state
     8 + // updated_at
     8 + // created_at
-    8 + // ends_at
     4; // num_promises
 
     pub fn account_size(&self) -> usize {
