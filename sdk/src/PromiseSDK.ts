@@ -4,27 +4,33 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Promise as PromiseAccount } from "../../target/types/promise";
 import { Network, createNetworkSeeds } from "./types/Network";
 import { NetworkRuleset } from "./types/NetworkRuleset";
-import { Promisor, PromisorState, createPromisorSeeds, fromPromisorState, toPromisorState } from "./types/Promisor";
+import { Promisor, createPromisorSeeds } from "./types/Promisor";
+import {
+  PromisorState,
+  fromPromisorState,
+  toPromisorState,
+} from "./types/PromisorState";
+import { PromiseProtocol, createPromiseSeeds } from "./types/PromiseProtocol";
+import { toPromiseState } from "./types/PromiseState";
+import { PromiseeRuleset } from "./types/PromiseeRuleset";
+import { PromisorRuleset } from "./types/PromisorRuleset";
 
 const idl = require("../../target/idl/promise.json");
 const programID = new PublicKey(idl.metadata.address);
 
 export class PromiseSDK {
   program: Program<PromiseAccount>;
-  authority: Keypair;
+  user: Keypair;
 
-  public constructor(
-    connection: Connection,
-    wallet: Wallet,
-    authority: Keypair
-  ) {
+  public constructor(connection: Connection, user: Keypair) {
+    const wallet = new Wallet(user);
     const provider = new AnchorProvider(
       connection,
       wallet,
       AnchorProvider.defaultOptions()
     );
     this.program = new Program(idl, programID, provider);
-    this.authority = authority;
+    this.user = user;
   }
 
   public static forLocal(secretKeyPath: string): PromiseSDK {
@@ -32,9 +38,8 @@ export class PromiseSDK {
     const secretKey = JSON.parse(fs.readFileSync(secretKeyPath).toString());
     const decodedSecretKey = new Uint8Array(secretKey);
     const keyPair = Keypair.fromSecretKey(decodedSecretKey);
-    const wallet = new Wallet(keyPair);
 
-    return new PromiseSDK(connection, wallet, keyPair);
+    return new PromiseSDK(connection, keyPair);
   }
 
   /**
@@ -96,7 +101,7 @@ export class PromiseSDK {
     ruleset: NetworkRuleset,
     customAuthority?: Keypair
   ): Promise<Network> {
-    const authority: Keypair = customAuthority ?? this.authority;
+    const authority: Keypair = customAuthority ?? this.user;
     const data = ruleset.toData() as Buffer;
     const seeds = createNetworkSeeds(authority.publicKey);
     const [networkAccount, networkBump] = PublicKey.findProgramAddressSync(
@@ -132,8 +137,8 @@ export class PromiseSDK {
     ruleset: NetworkRuleset,
     customAuthority?: Keypair
   ): Promise<Network> {
-    const authority = customAuthority ?? this.authority;
-    const data = ruleset.toData() as Buffer;
+    const authority = customAuthority ?? this.user;
+    const data = ruleset.toData();
 
     const signature = await this.program.methods
       .updateNetwork(data)
@@ -164,9 +169,9 @@ export class PromiseSDK {
     return {
       address: pubKey,
       owner: promisor.owner,
-      network: promisor.network,
+      network: promisor.promiseNetwork,
       state: toPromisorState(promisor.state),
-      numberOfPromises: promisor.numPromisees,
+      numberOfPromises: promisor.numPromises,
     };
   }
 
@@ -187,7 +192,7 @@ export class PromiseSDK {
     network: Network,
     customOwner?: Keypair
   ): Promise<Promisor> {
-    const owner = customOwner ?? this.authority;
+    const owner = customOwner ?? this.user;
     const seeds = createPromisorSeeds(network.address, owner.publicKey);
 
     const [promisorAccount, promisorBump] = PublicKey.findProgramAddressSync(
@@ -220,7 +225,7 @@ export class PromiseSDK {
     state: PromisorState,
     customOwner?: Keypair
   ): Promise<Promisor> {
-    const owner = customOwner ?? this.authority;
+    const owner = customOwner ?? this.user;
 
     const signature = await this.program.methods
       .updatePromisor(fromPromisorState(state))
@@ -228,6 +233,7 @@ export class PromiseSDK {
         promisor: promisor.address,
         owner: owner.publicKey,
         promiseNetwork: promisor.network,
+        authority: owner.publicKey,
       })
       .signers([owner])
       .rpc();
@@ -239,6 +245,126 @@ export class PromiseSDK {
       throw new Error("Failed to update promisor for unknown reason.");
 
     return updatePromisor;
+  }
+
+  /**
+   * ======================================================
+   * PROMISES
+   * =========================
+   */
+
+  public async getPromise(
+    pubKey: PublicKey
+  ): Promise<PromiseProtocol | undefined> {
+    const promise = await this.program.account.promise.fetch(pubKey);
+    return {
+      id: promise.id,
+      address: pubKey,
+      network: promise.network,
+      promisor: promise.promisor,
+      state: toPromiseState(promise.state),
+      promiseeRuleset: PromiseeRuleset.fromData(promise.promiseeData),
+      promisorRuleset: PromisorRuleset.fromData(promise.promisorData),
+      numberOfPromisees: promise.numPromisees,
+    };
+  }
+
+  public async getPromises(): Promise<PromiseProtocol[]> {
+    const promises = await this.program.account.promise.all();
+    return promises.map((promise) => {
+      return {
+        id: promise.account.id,
+        address: promise.publicKey,
+        network: promise.account.network,
+        promisor: promise.account.promisor,
+        state: toPromiseState(promise.account.state),
+        promiseeRuleset: PromiseeRuleset.fromData(promise.account.promiseeData),
+        promisorRuleset: PromisorRuleset.fromData(promise.account.promisorData),
+        numberOfPromisees: promise.account.numPromisees,
+      };
+    });
+  }
+
+  public async createPromise(
+    promisor: Promisor,
+    promisorRuleset: PromisorRuleset,
+    promiseeRuleset: PromiseeRuleset,
+    customOwner?: Keypair
+  ): Promise<PromiseProtocol> {
+    const owner = customOwner ?? this.user;
+    const id = promisor.numberOfPromises + 1;
+    const promisorData = promisorRuleset.toData();
+    const promiseeData = promiseeRuleset.toData();
+    const seeds = createPromiseSeeds(promisor.network, promisor.address, id);
+
+    const [promiseAccount, promiseBump] = await PublicKey.findProgramAddress(
+      seeds,
+      this.getProgramId()
+    );
+
+    const signature = await this.program.methods
+      .initializePromise(id, promisorData, promiseeData, promiseBump)
+      .accounts({
+        promise: promiseAccount,
+        promisor: promisor.address,
+        promiseNetwork: promisor.network,
+        promisorOwner: owner.publicKey,
+      })
+      .remainingAccounts([
+        {
+          pubkey: owner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+      ])
+      .signers([owner])
+      .rpc();
+
+    await this.confirmTransaction(signature);
+
+    const promise = await this.getPromise(promiseAccount);
+
+    if (promise == null)
+      throw new Error("Failed to create promise for unknown reason.");
+
+    return promise;
+  }
+
+  public async updatePromise(
+    promise: PromiseProtocol,
+    promisorRuleset: PromisorRuleset,
+    promiseeRuleset: PromiseeRuleset,
+    customOwner?: Keypair
+  ): Promise<PromiseProtocol> {
+    const owner = customOwner ?? this.user;
+    const promisorData = promisorRuleset.toData();
+    const promiseeData = promiseeRuleset.toData();
+
+    const signature = await this.program.methods
+      .updatePromise(promisorData, promiseeData)
+      .accounts({
+        promise: promise.address,
+        promisor: promise.promisor,
+        promisorOwner: owner.publicKey,
+      })
+      .remainingAccounts([
+        {
+          pubkey: owner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+      ])
+      .signers([owner])
+      .rpc();
+
+    await this.confirmTransaction(signature);
+
+    const updatedPromise = await this.getPromise(promise.address);
+
+    if (updatedPromise == null)
+      throw new Error("Failed to update promise for unknown reason.");
+
+    return updatedPromise;
   }
 
   /**
@@ -260,7 +386,7 @@ export class PromiseSDK {
     );
 
     if (result.value.err != null) {
-        throw result.value.err;
+      throw result.value.err;
     }
   }
 }

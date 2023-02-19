@@ -3,11 +3,8 @@ import { NetworkRuleset } from "./NetworkRuleset";
 
 export type Network = {
   address: PublicKey;
-
   createdBy: PublicKey;
-
   ruleset: NetworkRuleset;
-
   bump: number;
 };
 
