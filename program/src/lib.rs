@@ -1,8 +1,8 @@
 pub mod errors;
 pub mod instructions;
+pub mod network_ruleset;
 pub mod promisee_ruleset;
 pub mod promisor_ruleset;
-pub mod network_ruleset;
 pub mod state;
 pub mod utils;
 
@@ -39,7 +39,28 @@ pub mod promise {
         instructions::update_promisor(ctx, state)
     }
 
-    pub fn initialize_promise<'info>(ctx: Context<InitializePromise>, promisor_data: Vec<u8>, promisee_data: Vec<u8>, ends_at: i64, bump: u8) -> Result<()> {
-        instructions::initialize_promise(ctx, promisor_data, promisee_data, ends_at, bump)
+    pub fn initialize_promise<'info>(
+        ctx: Context<InitializePromise>,
+        id: i32,
+        promisor_data: Vec<u8>,
+        promisee_data: Vec<u8>,
+        bump: u8,
+    ) -> Result<()> {
+        instructions::initialize_promise(ctx, id, promisor_data, promisee_data, bump)
+    }
+
+    pub fn update_promise<'info>(
+        ctx: Context<UpdatePromise>,
+        promisor_data: Vec<u8>,
+        promisee_data: Vec<u8>,
+    ) -> Result<()> {
+        instructions::update_promise_rules(ctx, promisor_data, promisee_data)
+    }
+
+    pub fn update_promise_state<'info>(
+        ctx: Context<UpdatePromise>,
+        state: PromiseState,
+    ) -> Result<()> {
+        instructions::update_promise_state(ctx, state)
     }
 }
