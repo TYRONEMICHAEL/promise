@@ -85,7 +85,7 @@ pub fn update_promise_rules(
 
         promise.promisor_data = promisor_data;
         promise.promisee_data = promisee_data;
-        // promise.updated_at = Clock::get()?.unix_timestamp;
+        promise.updated_at = Clock::get()?.unix_timestamp;
     } else {
         // TODO: add a way to reclaim lamports
     }
