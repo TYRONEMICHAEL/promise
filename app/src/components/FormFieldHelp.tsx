@@ -1,4 +1,4 @@
-import { controlTextColor } from '../colorsPremium'
+import { controlTextColor } from '../colors'
 
 type Props = {
   help?: string

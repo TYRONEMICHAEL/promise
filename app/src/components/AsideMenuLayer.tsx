@@ -1,66 +1,58 @@
-import React from 'react'
-import { mdiLogout, mdiClose } from '@mdi/js'
-import BaseIcon from './BaseIcon'
-import AsideMenuItem from './AsideMenuItem'
-import AsideMenuList from './AsideMenuList'
-import { MenuAsideItem } from '../interfaces'
+import { ReactNode } from 'react'
+import { MenuAsideItemPremium } from '../interfaces'
 import { useAppSelector } from '../stores/hooks'
+import AsideMenuList from './AsideMenuList'
 
 type Props = {
-  menu: MenuAsideItem[]
+  menu: MenuAsideItemPremium[]
+  activeSecondaryMenuKey?: string | null
+  zIndex?: string
+  isCompact?: boolean
+  children: ReactNode
+  footer?: ReactNode
   className?: string
-  onAsideLgCloseClick: () => void
+  onMenuClick?: (item: MenuAsideItemPremium) => void
 }
 
-export default function AsideMenuLayer({ menu, className = '', ...props }: Props) {
+const AsideMenuLayer = ({
+  menu,
+  activeSecondaryMenuKey,
+  zIndex = 'z-50',
+  isCompact,
+  children,
+  footer,
+  className,
+  onMenuClick,
+}: Props) => {
   const asideStyle = useAppSelector((state) => state.style.asideStyle)
   const asideBrandStyle = useAppSelector((state) => state.style.asideBrandStyle)
   const asideScrollbarsStyle = useAppSelector((state) => state.style.asideScrollbarsStyle)
-  const darkMode = useAppSelector((state) => state.style.darkMode)
-
-  const logoutItem: MenuAsideItem = {
-    label: 'Logout',
-    icon: mdiLogout,
-    color: 'info',
-    isLogout: true,
-  }
-
-  const handleAsideLgCloseClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    props.onAsideLgCloseClick()
-  }
 
   return (
     <aside
-      className={`${className} zzz lg:py-2 lg:pl-2 w-60 fixed flex z-40 top-0 h-screen transition-position overflow-hidden`}
+      className={`lg:py-2 lg:pl-2 flex w-60 fixed top-0 h-screen transition-position overflow-hidden ${zIndex} ${className}`}
     >
       <div
         className={`lg:rounded-2xl flex-1 flex flex-col overflow-hidden dark:bg-slate-900 ${asideStyle}`}
       >
         <div
-          className={`flex flex-row h-14 items-center justify-between dark:bg-slate-900 ${asideBrandStyle}`}
+          className={`flex flex-row w-full shrink-0 h-14 items-center dark:bg-slate-900 ${asideBrandStyle}`}
         >
-          <div className="text-center flex-1 lg:text-left lg:pl-6 xl:text-center xl:pl-0">
-            <b className="font-black">One</b>
-          </div>
-          <button
-            className="hidden lg:inline-block xl:hidden p-3"
-            onClick={handleAsideLgCloseClick}
-          >
-            <BaseIcon path={mdiClose} />
-          </button>
+          {children}
         </div>
-        <div
-          className={`flex-1 overflow-y-auto overflow-x-hidden ${
-            darkMode ? 'aside-scrollbars-[slate]' : asideScrollbarsStyle
-          }`}
-        >
-          <AsideMenuList menu={menu} />
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden ${asideScrollbarsStyle}`}>
+          <AsideMenuList
+            menu={menu}
+            isCompact={isCompact}
+            activeSecondaryMenuKey={activeSecondaryMenuKey}
+            onMenuClick={onMenuClick}
+          />
         </div>
-        <ul>
-          <AsideMenuItem item={logoutItem} />
-        </ul>
+
+        {footer}
       </div>
     </aside>
   )
 }
+
+export default AsideMenuLayer

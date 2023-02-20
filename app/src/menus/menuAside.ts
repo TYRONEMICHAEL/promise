@@ -15,7 +15,7 @@ import {
   mdiHelpCircle,
   mdiBarcode,
 } from '@mdi/js'
-import type { MenuAsideItemPremium } from './interfaces/premium'
+import type { MenuAsideItemPremium } from '../interfaces'
 
 const menuAside: MenuAsideItemPremium[] = [
   {
@@ -39,25 +39,25 @@ const menuAside: MenuAsideItemPremium[] = [
     icon: mdiTelevisionGuide,
   },
   {
-    href: '/premium/ui',
+    href: '/moreui',
     label: 'UI Advanced',
     icon: mdiViewQuilt,
     updateMark: 'info',
   },
   {
-    href: '/premium/styles',
+    href: '/styles',
     label: 'Styles',
     icon: mdiPalette,
     updateMark: 'info',
   },
   {
-    href: '/premium/pricing',
+    href: '/pricing',
     label: 'Pricing layout',
     icon: mdiBarcode,
     updateMark: 'info',
   },
   {
-    href: '/premium/profile',
+    href: '/moreProfile',
     label: 'Profile',
     icon: mdiAccountCircle,
     updateMark: 'info',

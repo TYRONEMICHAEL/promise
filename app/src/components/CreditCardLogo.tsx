@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* ...next/image is useless with svgs */
 
-import { CreditCardType } from '../interfaces/premium'
+import { CreditCardType } from '../interfaces'
 import VisaBlue from '../../assets/visa-blue.svg'
 import McLight from '../../assets/mc-light-bg.svg'
 

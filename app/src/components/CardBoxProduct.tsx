@@ -1,5 +1,5 @@
 // import { mdiDotsVertical } from '@mdi/js'
-import { SampleProduct } from '../interfaces/premium'
+import { SampleProduct } from '../interfaces'
 // import { buttonMenuOptions } from '../../src/sampleButtonMenuOptions'
 import BaseButtons from '../components/BaseButtons'
 import CardBox from '../components/CardBox'

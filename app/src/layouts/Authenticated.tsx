@@ -1,11 +1,11 @@
 import React, { ReactNode, useEffect } from 'react'
 import { mdiForwardburger, mdiBackburger, mdiMenu } from '@mdi/js'
-import menuAside from '../menuAside'
-import menuNavBar from '../menuNavBar'
+import menuAside from '../menus/menuAside'
+import menuNavBar from '../menus/menuNavBar'
 import BaseIcon from '../components/BaseIcon'
 import NavBar from '../components/NavBar'
 import NavBarItemPlain from '../components/NavBarItemPlain'
-import AsideMenu from '../componentsPremium/AsideMenu'
+import AsideMenu from '../components/AsideMenu'
 import FooterBar from '../components/FooterBar'
 import { setUser } from '../stores/mainSlice'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
@@ -14,7 +14,7 @@ import {
   asideMobileToggle,
   setIsAsideMobileExpanded,
 } from '../stores/layoutSlice'
-import SnackBar from '../componentsPremium/SnackBar'
+import SnackBar from '../components/SnackBar'
 import FormField from '../components/FormField'
 import { Field, Form, Formik } from 'formik'
 import { useRouter } from 'next/router'

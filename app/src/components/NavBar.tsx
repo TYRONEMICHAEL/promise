@@ -8,8 +8,8 @@ import { MenuNavBarItem } from '../interfaces'
 
 type Props = {
   menu: MenuNavBarItem[]
-  className: string
-  children: ReactNode
+  className?: string
+  children?: ReactNode
 }
 
 export default function NavBar({ menu, className = '', children }: Props) {

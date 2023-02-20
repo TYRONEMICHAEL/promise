@@ -1,5 +1,5 @@
 import { mdiCreditCardCheck, mdiCreditCardEdit, mdiTrashCan } from '@mdi/js'
-import { CreditCardType } from '../interfaces/premium'
+import { CreditCardType } from '../interfaces'
 import BaseButton from '../components/BaseButton'
 import BaseButtons from '../components/BaseButtons'
 import CardBox from '../components/CardBox'

@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { ReactNode } from 'react'
-import { BgKeyPremium } from '../interfaces/premium'
+import { BgKeyPremium } from '../interfaces'
 import { gradientBgDark, gradientBgPinkRed, gradientBgPurplePink } from '../colors'
-import { gradientBgYellowRed, gradientBgRedYellow } from '../colorsPremium'
+import { gradientBgYellowRed, gradientBgRedYellow } from '../colors'
 import { useAppSelector } from '../stores/hooks'
 import BaseButton from '../components/BaseButton'
 import BaseButtons from '../components/BaseButtons'
-import JustboilLogo from '../components/JustboilLogo'
+import JustboilLogo from './PadelLogo'
 
 type Props = {
   bg: BgKeyPremium

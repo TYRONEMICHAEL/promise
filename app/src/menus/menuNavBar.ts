@@ -10,7 +10,7 @@ import {
   mdiThemeLightDark,
   mdiHelpCircleOutline,
 } from '@mdi/js'
-import { MenuNavBarItem } from './interfaces'
+import { MenuNavBarItem } from '../interfaces'
 
 const menuNavBar: MenuNavBarItem[] = [
   {
@@ -40,7 +40,7 @@ const menuNavBar: MenuNavBarItem[] = [
       {
         icon: mdiAccount,
         label: 'My Profile',
-        href: '/premium/profile',
+        href: '/moreProfile',
       },
       {
         icon: mdiCogOutline,

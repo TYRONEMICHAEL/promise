@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SnackBarMessage } from '../interfaces/premium'
+import { SnackBarMessage } from '../interfaces'
 import { getButtonColor } from '../colors'
 import { useAppDispatch } from '../stores/hooks'
 import { cancelMessage } from '../stores/snackBarSlice'

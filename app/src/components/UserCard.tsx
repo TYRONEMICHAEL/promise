@@ -1,33 +1,29 @@
 import { mdiCheckDecagram } from '@mdi/js'
 import { Field, Form, Formik } from 'formik'
 import { useAppSelector } from '../stores/hooks'
-import CardBox from './CardBox'
-import FormCheckRadio from './FormCheckRadio'
-import PillTag from './PillTag'
-import UserAvatarCurrentUser from './UserAvatarCurrentUser'
+import CardBox from '../components/CardBox'
+import FormCheckRadio from '../components/FormCheckRadio'
+import PillTag from '../components/PillTag'
+import UserAvatarCurrentUser from '../components/UserAvatarCurrentUser'
 
-type Props = {
-  className?: string
-}
-
-const UserCard = ({ className }: Props) => {
+const UserCard = () => {
   const userName = useAppSelector((state) => state.main.userName)
 
   return (
-    <CardBox className={className}>
-      <div className="flex flex-col lg:flex-row items-center justify-around lg:justify-center">
-        <UserAvatarCurrentUser className="mb-6 lg:mb-0 lg:mx-12" />
+    <CardBox flex="flex-row" className="items-center">
+      <div className="flex items-center justify-around lg:justify-center">
+        <UserAvatarCurrentUser className="lg:mx-12" />
         <div className="space-y-3 text-center md:text-left lg:mx-12">
           <div className="flex justify-center md:block">
-            <Formik
-              initialValues={{
-                notifications: ['1'],
-              }}
-              onSubmit={(values) => alert(JSON.stringify(values, null, 2))}
-            >
+            <Formik initialValues={{ userSwitchVal: true }} onSubmit={() => null}>
               <Form>
-                <FormCheckRadio type="switch" label="Notifications">
-                  <Field type="checkbox" name="notifications" value={'1'} />
+                <FormCheckRadio
+                  v-model="userSwitchVal"
+                  type="switch"
+                  label="Notifications"
+                  input-value
+                >
+                  <Field type="checkbox" name="userSwitchVal" value={true} />
                 </FormCheckRadio>
               </Form>
             </Formik>

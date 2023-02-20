@@ -4,7 +4,7 @@ import { useSampleClients } from '../hooks/sampleData'
 import { Client } from '../interfaces'
 import BaseButton from './BaseButton'
 import BaseButtons from './BaseButtons'
-import CardBoxModal from '../componentsPremium/CardBoxModal'
+import CardBoxModal from '../components/CardBoxModal'
 import UserAvatar from './UserAvatar'
 
 const TableSampleClients = () => {

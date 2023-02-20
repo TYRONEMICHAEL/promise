@@ -1,14 +1,14 @@
 import Head from 'next/head'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
-import BaseButton from '../../components/BaseButton'
-import BaseButtons from '../../components/BaseButtons'
-import LayoutAuthenticated from '../../layouts/Authenticated'
-import CardBoxPricing from '../../componentsPremium/CardBoxPricing'
-import SectionMain from '../../components/SectionMain'
-import SectionTitle from '../../components/SectionTitle'
-import type { PricingItem } from '../../interfaces/premium'
-import { getPageTitle } from '../../config'
+import BaseButton from '../components/BaseButton'
+import BaseButtons from '../components/BaseButtons'
+import LayoutAuthenticated from '../layouts/Authenticated'
+import CardBoxPricing from '../components/CardBoxPricing'
+import SectionMain from '../components/SectionMain'
+import SectionTitle from '../components/SectionTitle'
+import type { PricingItem } from '../interfaces'
+import { getPageTitle } from '../config'
 
 const PricingPage = () => {
   const [period, setPeriod] = useState('mo')

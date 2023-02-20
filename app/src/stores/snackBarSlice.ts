@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { SnackBarMessage, SnackBarPushedMessage } from '../interfaces/premium'
+import { SnackBarMessage, SnackBarPushedMessage } from '../interfaces'
 
 interface SnackBarState {
   messages: SnackBarMessage[]

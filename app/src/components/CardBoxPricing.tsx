@@ -1,6 +1,6 @@
 import { mdiCheck, mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { useState } from 'react'
-import type { PricingItem } from '../interfaces/premium'
+import type { PricingItem } from '../interfaces'
 import BaseButton from '../components/BaseButton'
 import BaseButtons from '../components/BaseButtons'
 import BaseIcon from '../components/BaseIcon'
