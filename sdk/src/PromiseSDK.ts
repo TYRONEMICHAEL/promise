@@ -2,18 +2,18 @@ import fs from "fs";
 import { AnchorProvider, Program, Wallet } from "@project-serum/anchor";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Promise as PromiseAccount } from "../../target/types/promise";
-import { Network, createNetworkSeeds } from "./types/Network";
-import { NetworkRuleset } from "./types/NetworkRuleset";
-import { Promisor, createPromisorSeeds } from "./types/Promisor";
+import { Network, createNetworkSeeds } from "./network/Network";
+import { NetworkRuleset } from "./network/NetworkRuleset";
+import { Promisor, createPromisorSeeds } from "./promisor/Promisor";
 import {
   PromisorState,
   fromPromisorState,
   toPromisorState,
-} from "./types/PromisorState";
-import { PromiseProtocol, createPromiseSeeds } from "./types/PromiseProtocol";
-import { toPromiseState } from "./types/PromiseState";
-import { PromiseeRuleset } from "./types/PromiseeRuleset";
-import { PromisorRuleset } from "./types/PromisorRuleset";
+} from "./promisor/PromisorState";
+import { PromiseProtocol, createPromiseSeeds } from "./promise/PromiseProtocol";
+import { toPromiseState } from "./promise/PromiseState";
+import { PromiseeRuleset } from "./promisee/PromiseeRuleset";
+import { PromisorRuleset } from "./promisor/PromisorRuleset";
 
 const idl = require("../../target/idl/promise.json");
 const programID = new PublicKey(idl.metadata.address);
@@ -69,8 +69,7 @@ export class PromiseSDK {
     return {
       address: pubKey,
       createdBy: network.authority,
-      ruleset,
-      bump: network.bump,
+      ruleset
     };
   }
 

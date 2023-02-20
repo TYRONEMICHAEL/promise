@@ -1,16 +1,16 @@
 import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { PromiseSDK } from "../src/PromiseSDK";
-import { Network } from "../src/types/Network";
-import { NetworkRuleset } from "../src/types/NetworkRuleset";
-import { Promisor } from "../src/types/Promisor";
-import { RulesetDate } from "../src/types/rulesets/RulsetDate";
-import { PromiseProtocol } from "../src/types/PromiseProtocol";
-import { PromisorState } from "../src/types/PromisorState";
-import { PromisorRuleset } from "../src/types/PromisorRuleset";
-import { SolGate } from "../src/types/rulesets/SolGate";
-import { PromiseeRuleset } from "../src/types/PromiseeRuleset";
-import { PromiseState } from "../src/types/PromiseState";
+import { Network } from "../src/network/Network";
+import { NetworkRuleset } from "../src/network/NetworkRuleset";
+import { Promisor } from "../src/promisor/Promisor";
+import { RulesetDate } from "../src/rules/RulsetDate";
+import { PromiseProtocol } from "../src/promise/PromiseProtocol";
+import { PromisorState } from "../src/promisor/PromisorState";
+import { PromisorRuleset } from "../src/promisor/PromisorRuleset";
+import { SolGate } from "../src/rules/SolGate";
+import { PromiseeRuleset } from "../src/promisee/PromiseeRuleset";
+import { PromiseState } from "../src/promise/PromiseState";
 
 const spawn = require("child_process").spawn;
 const program = require("../../target/idl/promise.json");
