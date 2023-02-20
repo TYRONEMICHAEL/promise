@@ -26,7 +26,7 @@ export class NetworkRuleset {
     return deserialize(data, NetworkRuleset);
   }
 
-  public toData(): Uint8Array | Buffer {
-    return serialize(this);
+  public toData(): Buffer {
+    return serialize(this) as Buffer;
   }
 }
