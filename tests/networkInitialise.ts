@@ -115,5 +115,92 @@ describe("promise", () => {
     expect(new BN(rules.startDate.date).toNumber()).to.equal(ruleset.startDate.date);
     expect(rules.endDate).to.not.exist;
   });
+
+  it("Multiple networks can be initialised", async () => {
+    const { connection } = getProvider();
+    const authorityA = web3.Keypair.generate();
+    const authorityB = web3.Keypair.generate();
+    const airdropSignatureA = await connection.requestAirdrop(
+      authorityA.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const airdropSignatureB = await connection.requestAirdrop(
+      authorityB.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const latestBlockHash = await connection.getLatestBlockhash();
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: airdropSignatureA,
+    });
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: airdropSignatureB,
+    });
+
+    const [networkAccountA, networkAccountBumpA] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promise_network"),
+        authorityA.publicKey.toBuffer(), 
+      ],
+      program.programId
+    );
+
+    const [networkAccountB, networkAccountBumpB] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promise_network"),
+        authorityB.publicKey.toBuffer(), 
+      ],
+      program.programId
+    );
+
+    const ruleset = new Ruleset(
+      StartDate.fromDate(new Date()),
+    );
+
+    const serialized = serialize(ruleset);
+
+    const a = await program.methods
+      .initializeNetwork(serialized, networkAccountBumpA)
+      .accounts({
+        promiseNetwork: networkAccountA,
+        authority: authorityA.publicKey,
+      })
+      .instruction()
+
+    const b = await program.methods
+      .initializeNetwork(serialized, networkAccountBumpB)
+      .accounts({
+        promiseNetwork: networkAccountB,
+        authority: authorityB.publicKey,
+      })
+      .instruction()
+
+    const tx = new web3.Transaction();
+
+    tx.add(a);
+    tx.add(b);
+
+    await web3.sendAndConfirmTransaction(connection, tx, [authorityA, authorityB]);
+
+    const networkA = await program.account.promiseNetwork.fetch(
+      networkAccountA
+    );
+
+    const networkB = await program.account.promiseNetwork.fetch(
+      networkAccountB
+    );
+
+    expect(networkA.authority.toBase58()).to.equal(authorityA.publicKey.toBase58());
+    expect(networkA.bump).to.equal(networkAccountBumpA);
+    expect(networkB.authority.toBase58()).to.equal(authorityB.publicKey.toBase58());
+    expect(networkB.bump).to.equal(networkAccountBumpB);
+  });
 });
 
