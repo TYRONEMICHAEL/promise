@@ -23,8 +23,8 @@ pub struct UpdatePromise<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn update_promise_rules(
-    ctx: Context<UpdatePromise>,
+pub fn update_promise_rules<'info>(
+    ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>,
     promisor_data: Vec<u8>,
     promisee_data: Vec<u8>,
 ) -> Result<()> {
@@ -93,7 +93,7 @@ pub fn update_promise_rules(
     Ok(())
 }
 
-pub fn update_promise_state(ctx: Context<UpdatePromise>, state: PromiseState) -> Result<()> {
+pub fn update_promise_state<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>, state: PromiseState) -> Result<()> {
     match state {
         PromiseState::Created => Err(PromiseError::InvalidPromiseState.into()),
         PromiseState::Active => {
@@ -113,7 +113,7 @@ pub fn update_promise_state(ctx: Context<UpdatePromise>, state: PromiseState) ->
     }
 }
 
-fn set_active(ctx: Context<UpdatePromise>, state: PromiseState) -> Result<()> {
+fn set_active<'b, 'info>(ctx: Context<'_, 'b, '_, 'info, UpdatePromise<'info>>, state: PromiseState) -> Result<()> {
     let promise = &ctx.accounts.promise;
     let rules = match PromisorRules::try_from_slice(&promise.promisor_data) {
         Ok(rules) => rules,

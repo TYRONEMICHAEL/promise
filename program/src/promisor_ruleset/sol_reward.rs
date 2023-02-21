@@ -1,4 +1,6 @@
-use crate::{errors::PromiseError, utils::assert_keys_equal};
+use anchor_lang::solana_program::{system_instruction, program::invoke};
+
+use crate::{errors::PromiseError, utils::{assert_keys_equal, try_get_account_info}};
 
 use super::*;
 
@@ -14,18 +16,27 @@ impl Rule for SolReward {
 }
 
 impl Condition for SolReward {
-    fn validate<'info>(
+    fn validate<'c, 'info>(
         &self,
         promisor: &Account<Promisor>,
         _promise: &Account<Promise>,
         remaining_accounts: &[AccountInfo],
-        _evaluation_context: &mut EvaluationContext,
+        evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
-        if remaining_accounts.is_empty() {
-            return err!(PromiseError::NotEnoughAccounts);
-        }
-        let promisor_owner = remaining_accounts[0].clone();
-        assert_keys_equal(&promisor.owner, &promisor_owner.key())?;
+        let index = evaluation_context.account_cursor;
+        let promisor_owner = try_get_account_info::<AccountInfo>(&remaining_accounts, index)?;
+        assert_keys_equal(&promisor.owner.key(), &promisor_owner.key())?;
+
+        evaluation_context
+        .indices
+        .insert("lamports_destination", index);
+
+        evaluation_context
+        .indices
+        .insert("system_program", index + 1);
+
+        evaluation_context.account_cursor += 2;
+
         if promisor_owner.lamports() < self.lamports {
             msg!(
                 "Require {} lamports, accounts has {} lamports",
@@ -36,4 +47,35 @@ impl Condition for SolReward {
         }
         Ok(())
     }
+
+    fn pre_action<'c, 'info>(
+        &self,
+        _promisor: &Account<Promisor>,
+        promise: &Account<'info, Promise>,
+        remaining_accounts: &'c [AccountInfo<'info>],
+        evaluation_context: &mut EvaluationContext,
+    ) -> Result<()> {
+        // let system_program_index = evaluation_context.indices["system_program"];
+        // let destination_index = evaluation_context.indices["lamports_destination"];
+        let from_account = &remaining_accounts[0];
+        let system_account = &remaining_accounts[1];
+
+        msg!("Transferring {} lamports to {}", self.lamports, promise.key());
+
+        invoke(
+            &system_instruction::transfer(
+                &from_account.key(),
+                &promise.key(),
+                self.lamports,
+            ),
+            &[
+                from_account.to_account_info(),
+                promise.to_account_info(),
+                system_account.to_account_info(),
+            ],
+        )?;
+
+        Ok(())
+    }
+
 }
