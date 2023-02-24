@@ -32,6 +32,10 @@ pub mod promise {
         instructions::initialize_promisor(ctx, bump)
     }
 
+    pub fn initialize_promisee<'info>(ctx: Context<InitializePromisee>, bump: u8) -> Result<()> {
+        instructions::initialize_promisee(ctx, bump)
+    }
+
     pub fn update_promisor<'info>(
         ctx: Context<UpdatePromisor>,
         state: PromisorState,

@@ -58,5 +58,7 @@ pub fn initialize_promisor(ctx: Context<InitializePromisor>, bump: u8) -> Result
     promisor.promise_network = ctx.accounts.promise_network.key();
     promisor.state = PromisorState::Active;
     promisor.num_promises = 0;
+    promisor.created_at = Clock::get()?.unix_timestamp;
+    promisor.updated_at = Clock::get()?.unix_timestamp;
     Ok(())
 }
