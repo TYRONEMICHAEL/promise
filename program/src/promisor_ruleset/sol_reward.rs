@@ -27,14 +27,6 @@ impl Condition for SolReward {
         let promisor_owner = try_get_account_info::<AccountInfo>(&remaining_accounts, index)?;
         assert_keys_equal(&promisor.owner.key(), &promisor_owner.key())?;
 
-        evaluation_context
-        .indices
-        .insert("lamports_destination", index);
-
-        evaluation_context
-        .indices
-        .insert("system_program", index + 1);
-
         evaluation_context.account_cursor += 2;
 
         if promisor_owner.lamports() < self.lamports {
@@ -50,15 +42,18 @@ impl Condition for SolReward {
 
     fn pre_action<'c, 'info>(
         &self,
-        _promisor: &Account<Promisor>,
+        promisor: &Account<Promisor>,
         promise: &Account<'info, Promise>,
         remaining_accounts: &'c [AccountInfo<'info>],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
-        // let system_program_index = evaluation_context.indices["system_program"];
-        // let destination_index = evaluation_context.indices["lamports_destination"];
-        let from_account = &remaining_accounts[0];
-        let system_account = &remaining_accounts[1];
+        let index = evaluation_context.account_cursor;
+        let from_account = &remaining_accounts[index];
+        let system_account = &remaining_accounts[index + 1];
+
+        evaluation_context.account_cursor += 2;
+
+        assert_keys_equal(&promisor.owner.key(), &from_account.key())?;
 
         msg!("Transferring {} lamports to {}", self.lamports, promise.key());
 

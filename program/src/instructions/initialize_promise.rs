@@ -56,9 +56,9 @@ pub fn initialize_promise<'info>(
     };
 
     for condition in &conditions {
-        condition.pre_action(
+        condition.validate(
             &ctx.accounts.promisor,
-            &&ctx.accounts.promise,
+            &ctx.accounts.promise,
             &ctx.remaining_accounts,
             &mut evaluation_context,
         )?;

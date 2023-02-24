@@ -12,7 +12,7 @@ describe("promise", () => {
   setProvider(AnchorProvider.env());
   const program = workspace.Promise as Program<PromiseAccount>;
 
-  it.only("A promise can be updated", async () => {
+  it("A promise can be updated", async () => {
     const { connection } = getProvider();
     const networkAuthority = web3.Keypair.generate();
     const promisorOwner = web3.Keypair.generate();
@@ -98,7 +98,7 @@ describe("promise", () => {
     
     const promiseeRuleset = new PromiseeRuleset();
     const promiseeSerialized = serialize(promiseeRuleset);
-    const promisorRuleset = new PromisorRuleset(new SolReward(LAMPORTS_PER_SOL / 2))
+    const promisorRuleset = new PromisorRuleset()
     const promisorSerialized = serialize(promisorRuleset);
 
     await program.methods
@@ -124,33 +124,33 @@ describe("promise", () => {
       .signers([promisorOwner])
       .rpc();
 
-    // const updatedPromisorRuleset = new PromisorRuleset(
-    //   new SolReward(LAMPORTS_PER_SOL / 4)
-    // );
+    const updatedPromisorRuleset = new PromisorRuleset(
+      new SolReward(LAMPORTS_PER_SOL / 2)
+    );
 
-    // const updatedPromisorSerialized = serialize(updatedPromisorRuleset);
+    const updatedPromisorSerialized = serialize(updatedPromisorRuleset);
 
-    // await program.methods
-    //   .updatePromise(updatedPromisorSerialized, promiseeSerialized)
-    //   .accounts({
-    //     promise: promiseAccount,
-    //     promisor: promisorAccount,
-    //     promisorOwner: promisorOwner.publicKey,
-    //   })
-    //   .remainingAccounts([
-    //     {
-    //       pubkey: promisorOwner.publicKey,
-    //       isWritable: true,
-    //       isSigner: true,
-    //     },
-    //     {
-    //       pubkey: SystemProgram.programId,
-    //       isWritable: false,
-    //       isSigner: false,
-    //     }
-    //   ])
-    //   .signers([promisorOwner])
-    //   .rpc();
+    await program.methods
+      .updatePromise(updatedPromisorSerialized, promiseeSerialized)
+      .accounts({
+        promise: promiseAccount,
+        promisor: promisorAccount,
+        promisorOwner: promisorOwner.publicKey,
+      })
+      .remainingAccounts([
+        {
+          pubkey: promisorOwner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
+      .signers([promisorOwner])
+      .rpc();
 
     const updatedPromisor = await program.account.promisor.fetch(
       promisorAccount
@@ -161,12 +161,11 @@ describe("promise", () => {
     );
     
     let accountInfo = await connection.getAccountInfo(promiseAccount);
-    console.log(accountInfo.lamports);
     
     expect(updatedPromisor.numPromises).to.equal(1);
     expect(promise.state["created"]).to.not.be.undefined;
     expect(promise.promiseeData).to.deep.equal(promiseeSerialized);
-    // expect(promise.promisorData).to.deep.equal(updatedPromisorSerialized);
+    expect(promise.promisorData).to.deep.equal(updatedPromisorSerialized);
     expect(promise.createdAt).to.be.not.be.undefined;
     expect(promise.updatedAt).to.be.not.be.undefined;
     expect(promise.network.toBase58()).to.equal(networkAccount.toBase58());
