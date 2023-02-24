@@ -160,8 +160,6 @@ describe("promise", () => {
       promiseAccount
     );
     
-    let accountInfo = await connection.getAccountInfo(promiseAccount);
-    
     expect(updatedPromisor.numPromises).to.equal(1);
     expect(promise.state["created"]).to.not.be.undefined;
     expect(promise.promiseeData).to.deep.equal(promiseeSerialized);
@@ -171,5 +169,156 @@ describe("promise", () => {
     expect(promise.network.toBase58()).to.equal(networkAccount.toBase58());
     expect(promise.promisor.toBase58()).to.equal(promisorAccount.toBase58());
     expect(promise.bump).to.equal(promiseAccountBump);
+  });
+
+  it("A promise can be set to active and the pre_action rules are run", async () => {
+    const { connection } = getProvider();
+    const networkAuthority = web3.Keypair.generate();
+    const promisorOwner = web3.Keypair.generate();
+    
+    const a1 = await connection.requestAirdrop(
+      networkAuthority.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const a2 = await connection.requestAirdrop(
+      promisorOwner.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const latestBlockHash = await connection.getLatestBlockhash();
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a1,
+    });
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a2,
+    });
+
+    const [networkAccount, networkAccountBump] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promise_network"),
+        networkAuthority.publicKey.toBuffer(), 
+      ],
+      program.programId
+    );
+
+    const networkRuleset = new NetworkRuleset();
+    const networkSerialized = serialize(networkRuleset);
+
+    await program.methods
+      .initializeNetwork(networkSerialized, networkAccountBump)
+      .accounts({
+        promiseNetwork: networkAccount,
+        authority: networkAuthority.publicKey,
+      })
+      .signers([networkAuthority])
+      .rpc();
+
+    const [promisorAccount, promisorAccountBump] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promisor"),
+        networkAccount.toBuffer(),
+        promisorOwner.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    await program.methods
+      .initializePromisor(promisorAccountBump)
+      .accounts({
+        promisor: promisorAccount,
+        owner: promisorOwner.publicKey,
+        promiseNetwork: networkAccount,
+      })
+      .signers([promisorOwner])
+      .rpc();
+
+    const promisor = await program.account.promisor.fetch(
+      promisorAccount
+    );
+
+    const id = promisor.numPromises + 1;
+
+    const [promiseAccount, promiseAccountBump] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promise"),
+        networkAccount.toBuffer(),
+        promisorAccount.toBuffer(),
+        new BN(id).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
+    
+    const promiseeRuleset = new PromiseeRuleset();
+    const promiseeSerialized = serialize(promiseeRuleset);
+    const promisorRuleset = new PromisorRuleset(
+      new SolReward(LAMPORTS_PER_SOL / 2)
+    )
+
+    const promisorSerialized = serialize(promisorRuleset);
+
+    await program.methods
+      .initializePromise(id, promisorSerialized, promiseeSerialized, promiseAccountBump)
+      .accounts({
+        promise: promiseAccount,
+        promisor: promisorAccount,
+        promiseNetwork: networkAccount,
+        promisorOwner: promisorOwner.publicKey,
+      })
+      .remainingAccounts([
+        {
+          pubkey: promisorOwner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
+      .signers([promisorOwner])
+      .rpc();
+
+    let promisorAccountInfo = await connection.getAccountInfo(promisorOwner.publicKey);
+
+    await program.methods
+      .updatePromiseState({ active: {} })
+      .accounts({
+        promise: promiseAccount,
+        promisor: promisorAccount,
+        promisorOwner: promisorOwner.publicKey,
+      })
+      .remainingAccounts([
+        {
+          pubkey: promisorOwner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
+      .signers([promisorOwner])
+      .rpc();
+
+    let promiseAccountInfo = await connection.getAccountInfo(promiseAccount);
+    let debitedPromisorAccountInfo = await connection.getAccountInfo(promisorOwner.publicKey);
+
+    const promise = await program.account.promise.fetch(
+      promiseAccount
+    );
+
+    expect(debitedPromisorAccountInfo.lamports).to.be.eq(promisorAccountInfo.lamports - LAMPORTS_PER_SOL / 2);
+    expect(promiseAccountInfo.lamports).to.be.greaterThan(LAMPORTS_PER_SOL / 2);
+    expect(promise.state["active"]).to.not.be.undefined;
   });
 });

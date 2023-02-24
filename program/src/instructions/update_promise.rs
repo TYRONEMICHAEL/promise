@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Accounts)]
 #[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>)]
-pub struct UpdatePromise<'info> {
+pub struct UpdatePromiseRules<'info> {
     #[account(mut, constraint = promisor.key() == promisor.key())]
     pub promise: Account<'info, Promise>,
     #[account(mut, constraint = promisor_owner.key() == promisor.owner.key())]
@@ -24,7 +24,7 @@ pub struct UpdatePromise<'info> {
 }
 
 pub fn update_promise_rules<'info>(
-    ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>,
+    ctx: Context<'_, '_, '_, 'info, UpdatePromiseRules<'info>>,
     promisor_data: Vec<u8>,
     promisee_data: Vec<u8>,
 ) -> Result<()> {
@@ -93,7 +93,19 @@ pub fn update_promise_rules<'info>(
     Ok(())
 }
 
-pub fn update_promise_state<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>, state: PromiseState) -> Result<()> {
+#[derive(Accounts)]
+#[instruction(state: PromiseState)]
+pub struct UpdatePromiseState<'info> {
+    #[account(mut, constraint = promisor.key() == promisor.key())]
+    pub promise: Account<'info, Promise>,
+    #[account(mut, constraint = promisor_owner.key() == promisor.owner.key())]
+    pub promisor: Account<'info, Promisor>,
+    #[account(mut)]
+    pub promisor_owner: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+pub fn update_promise_state<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromiseState<'info>>, state: PromiseState) -> Result<()> {
     match state {
         PromiseState::Created => Err(PromiseError::InvalidPromiseState.into()),
         PromiseState::Active => {
@@ -113,7 +125,7 @@ pub fn update_promise_state<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromise
     }
 }
 
-fn set_active<'b, 'info>(ctx: Context<'_, 'b, '_, 'info, UpdatePromise<'info>>, state: PromiseState) -> Result<()> {
+fn set_active<'b, 'info>(ctx: Context<'_, 'b, '_, 'info, UpdatePromiseState<'info>>, state: PromiseState) -> Result<()> {
     let promise = &ctx.accounts.promise;
     let rules = match PromisorRules::try_from_slice(&promise.promisor_data) {
         Ok(rules) => rules,

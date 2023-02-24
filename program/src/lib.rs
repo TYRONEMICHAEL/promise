@@ -50,7 +50,7 @@ pub mod promise {
     }
 
     pub fn update_promise<'info>(
-        ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>,
+        ctx: Context<'_, '_, '_, 'info, UpdatePromiseRules<'info>>,
         promisor_data: Vec<u8>,
         promisee_data: Vec<u8>,
     ) -> Result<()> {
@@ -58,7 +58,7 @@ pub mod promise {
     }
 
     pub fn update_promise_state<'info>(
-        ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>,
+        ctx: Context<'_, '_, '_, 'info, UpdatePromiseState<'info>>,
         state: PromiseState,
     ) -> Result<()> {
         instructions::update_promise_state(ctx, state)
