@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>, state: PromiseState)]
+#[instruction(promisor_data: Vec<u8>, promisee_data: Vec<u8>)]
 pub struct UpdatePromiseRules<'info> {
     #[account(mut, constraint = promisor.key() == promisor.key())]
     pub promise: Account<'info, Promise>,
