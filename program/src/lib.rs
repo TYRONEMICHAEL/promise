@@ -40,7 +40,7 @@ pub mod promise {
     }
 
     pub fn initialize_promise<'info>(
-        ctx: Context<InitializePromise>,
+        ctx: Context<'_, '_, '_, 'info, InitializePromise<'info>>,
         id: i32,
         promisor_data: Vec<u8>,
         promisee_data: Vec<u8>,
@@ -50,7 +50,7 @@ pub mod promise {
     }
 
     pub fn update_promise<'info>(
-        ctx: Context<UpdatePromise>,
+        ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>,
         promisor_data: Vec<u8>,
         promisee_data: Vec<u8>,
     ) -> Result<()> {
@@ -58,7 +58,7 @@ pub mod promise {
     }
 
     pub fn update_promise_state<'info>(
-        ctx: Context<UpdatePromise>,
+        ctx: Context<'_, '_, '_, 'info, UpdatePromise<'info>>,
         state: PromiseState,
     ) -> Result<()> {
         instructions::update_promise_state(ctx, state)

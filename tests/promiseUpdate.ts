@@ -2,7 +2,7 @@
 import { AnchorProvider, BN, getProvider, Program, setProvider, utils, web3, workspace } from "@project-serum/anchor";
 import { expect } from "chai";
 import { Promise as PromiseAccount } from "../target/types/promise";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { PromiseeRuleset, PromisorRuleset, NetworkRuleset, StartDate, SolWager, SolReward } from "./schema";
 import { serialize } from "@dao-xyz/borsh";
 
@@ -109,11 +109,18 @@ describe("promise", () => {
         promiseNetwork: networkAccount,
         promisorOwner: promisorOwner.publicKey,
       })
-      .remainingAccounts([{
-        pubkey: promisorOwner.publicKey,
-        isWritable: true,
-        isSigner: true,
-      }])
+      .remainingAccounts([
+        {
+          pubkey: promisorOwner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
       .signers([promisorOwner])
       .rpc();
 
@@ -130,11 +137,18 @@ describe("promise", () => {
         promisor: promisorAccount,
         promisorOwner: promisorOwner.publicKey,
       })
-      .remainingAccounts([{
-        pubkey: promisorOwner.publicKey,
-        isWritable: true,
-        isSigner: true,
-      }])
+      .remainingAccounts([
+        {
+          pubkey: promisorOwner.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
       .signers([promisorOwner])
       .rpc();
 
@@ -145,6 +159,8 @@ describe("promise", () => {
     const promise = await program.account.promise.fetch(
       promiseAccount
     );
+    
+    let accountInfo = await connection.getAccountInfo(promiseAccount);
     
     expect(updatedPromisor.numPromises).to.equal(1);
     expect(promise.state["created"]).to.not.be.undefined;

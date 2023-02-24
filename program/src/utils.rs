@@ -39,3 +39,14 @@ pub fn assert_is_token_account(
     assert_keys_equal(&token_account.mint, mint)?;
     Ok(token_account)
 }
+
+pub fn try_get_account_info<'c, 'info, T>(
+    remaining_accounts: &'c [AccountInfo<'info>],
+    index: usize,
+) -> Result<&'c AccountInfo<'info>> {
+    if index < remaining_accounts.len() {
+        Ok(&remaining_accounts[index])
+    } else {
+        err!(PromiseError::NotEnoughAccounts)
+    }
+}

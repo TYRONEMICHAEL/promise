@@ -8,20 +8,20 @@ use crate::state::{Promise, Promisor};
 
 pub trait Condition {
     // Validate the inputs pass the condition.
-    fn validate<'info>(
+    fn validate<'c, 'info>(
         &self,
         promisor: &Account<Promisor>,
-        promise: &Account<Promise>,
-        remaining_accounts: &[AccountInfo],
+        promise: &Account<'info, Promise>,
+        remaining_accounts: &'c [AccountInfo<'info>],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()>;
 
     // Perform any pre-action logic.
-    fn pre_action<'info>(
+    fn pre_action<'c, 'info>(
         &self,
         _promisor: &Account<Promisor>,
-        _promise: &Account<Promise>,
-        _remaining_accounts: &[AccountInfo],
+        _promise: &Account<'info, Promise>,
+        _remaining_accounts: &'c [AccountInfo<'info>],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())

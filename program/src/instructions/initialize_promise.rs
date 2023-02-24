@@ -33,8 +33,8 @@ pub struct InitializePromise<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn initialize_promise(
-    ctx: Context<InitializePromise>,
+pub fn initialize_promise<'info>(
+    ctx: Context<'_, '_, '_, 'info, InitializePromise<'info>>,
     id: i32,
     promisor_data: Vec<u8>,
     promisee_data: Vec<u8>,
