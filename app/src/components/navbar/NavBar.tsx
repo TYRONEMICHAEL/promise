@@ -1,18 +1,19 @@
-import React, { ReactNode, useState } from 'react'
 import { mdiClose, mdiDotsVertical } from '@mdi/js'
-import { containerMaxW } from '../config'
-import BaseIcon from './BaseIcon'
-import NavBarItemPlain from './NavBarItemPlain'
-import NavBarMenuList from './NavBarMenuList'
-import { MenuNavBarItem } from '../interfaces'
+import { ReactNode, useState } from 'react'
+import { containerMaxW } from '../../config'
+import { MenuNavBarItem } from '../../interfaces'
+import BaseIcon from '../BaseIcon'
+import NavBarItemPlain from '../NavBarItemPlain'
+import StyleModeNavBarButton from './items/StyleModeNavBarButton'
+import WalletNavBarButton from './items/WalletNavBarButton'
 
 type Props = {
-  menu: MenuNavBarItem[]
+  menu?: MenuNavBarItem[]
   className?: string
   children?: ReactNode
 }
 
-export default function NavBar({ menu, className = '', children }: Props) {
+export default function NavBar({ className = '', children }: Props) {
   const [isMenuNavBarActive, setIsMenuNavBarActive] = useState(false)
 
   const handleMenuNavBarToggleClick = () => {
@@ -35,7 +36,8 @@ export default function NavBar({ menu, className = '', children }: Props) {
             isMenuNavBarActive ? 'block' : 'hidden'
           } max-h-screen-menu overflow-y-auto lg:overflow-visible absolute w-screen top-14 left-0 bg-gray-50 shadow-lg lg:w-auto lg:flex lg:static lg:shadow-none dark:bg-slate-800`}
         >
-          <NavBarMenuList menu={menu} />
+          <StyleModeNavBarButton />
+          <WalletNavBarButton />
         </div>
       </div>
     </nav>

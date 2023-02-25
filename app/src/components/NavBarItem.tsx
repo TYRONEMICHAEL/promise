@@ -9,6 +9,7 @@ import NavBarMenuList from './NavBarMenuList'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
 import { MenuNavBarItem } from '../interfaces'
 import { setDarkMode } from '../stores/styleSlice'
+import { WalletMultiButton, useWalletModal } from '@solana/wallet-adapter-react-ui'
 
 type Props = {
   item: MenuNavBarItem
@@ -23,7 +24,7 @@ export default function NavBarItem({ item }: Props) {
   const navBarItemLabelStyle = useAppSelector((state) => state.style.navBarItemLabelStyle)
   const navBarItemLabelHoverStyle = useAppSelector((state) => state.style.navBarItemLabelHoverStyle)
 
-  const userName = useAppSelector((state) => state.main.userName)
+  const userName = useAppSelector((state) => "Example")
 
   const [isDropdownActive, setIsDropdownActive] = useState(false)
 
@@ -46,6 +47,12 @@ export default function NavBarItem({ item }: Props) {
     if (item.isToggleLightDark) {
       dispatch(setDarkMode(null))
     }
+  }
+
+  const { setVisible } = useWalletModal();
+    
+  const connect = () => {
+        setVisible(true)
   }
 
   const NavBarItemComponentContents = (
@@ -95,6 +102,14 @@ export default function NavBarItem({ item }: Props) {
       <Link href={item.href} target={item.target} className={componentClass}>
         {NavBarItemComponentContents}
       </Link>
+    )
+  }
+
+  if (item.isConnect) {
+    return (
+      <div>
+        <WalletMultiButton style={{ margin: 16 }} />
+      </div>
     )
   }
 

@@ -1,21 +1,21 @@
-import { mdiMonitor } from '@mdi/js'
+import { mdiAccountGroup } from '@mdi/js'
 import { ReactElement } from 'react'
 import SectionMain from '../components/SectionMain'
 import SectionTitleLineWithButton from '../components/SectionTitleLineWithButton'
 import LayoutApp from '../layouts/App'
 
-const DashboardPage = () => {
+const SquadsPage = () => {
   return (
     <>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiMonitor} title="Dashboard" />
+        <SectionTitleLineWithButton icon={mdiAccountGroup} title="Squads" />
       </SectionMain>
     </>
   )
 }
 
-DashboardPage.getLayout = function getLayout(page: ReactElement) {
+SquadsPage.getLayout = function getLayout(page: ReactElement) {
   return <LayoutApp>{page}</LayoutApp>
 }
 
-export default DashboardPage
+export default SquadsPage

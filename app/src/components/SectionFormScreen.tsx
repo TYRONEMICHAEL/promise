@@ -6,7 +6,7 @@ import { gradientBgYellowRed, gradientBgRedYellow } from '../colors'
 import { useAppSelector } from '../stores/hooks'
 import BaseButton from '../components/BaseButton'
 import BaseButtons from '../components/BaseButtons'
-import JustboilLogo from './PadelLogo'
+import JustboilLogo from './TwoByTwoLogo'
 
 type Props = {
   bg: BgKeyPremium

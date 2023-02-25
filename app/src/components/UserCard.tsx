@@ -7,7 +7,7 @@ import PillTag from '../components/PillTag'
 import UserAvatarCurrentUser from '../components/UserAvatarCurrentUser'
 
 const UserCard = () => {
-  const userName = useAppSelector((state) => state.main.userName)
+  const userName = useAppSelector((state) => "Example")
 
   return (
     <CardBox flex="flex-row" className="items-center">

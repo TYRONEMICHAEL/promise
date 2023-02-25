@@ -4,7 +4,7 @@ import { gradientBgPurplePink, gradientBgDark, gradientBgPinkRed } from '../colo
 import { useAppSelector } from '../stores/hooks'
 
 type Props = {
-  bg: BgKey
+  bg?: BgKey
   children: ReactNode
 }
 
@@ -13,7 +13,7 @@ export default function SectionFullScreen({ bg, children }: Props) {
 
   let componentClass = 'flex min-h-screen items-center justify-center '
 
-  if (darkMode) {
+  if (darkMode && bg) {
     componentClass += gradientBgDark
   } else if (bg === 'purplePink') {
     componentClass += gradientBgPurplePink

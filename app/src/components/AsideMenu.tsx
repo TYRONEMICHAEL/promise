@@ -15,52 +15,30 @@ type Props = {
 const AsideMenu = ({ menu }: Props) => {
   const [isPrimaryMenuCompact, setIsPrimaryMenuCompact] = useState(true)
 
-  const [secondaryMenuItem, setSecondaryMenuItem] = useState(null)
-
   const isAsideMobileExpanded = useAppSelector((state) => state.layout.isAsideMobileExpanded)
   const isAsideLgActive = useAppSelector((state) => state.layout.isAsideLgActive)
 
   let overlayLayerDisplayType = 'hidden'
 
-  if (secondaryMenuItem) {
-    overlayLayerDisplayType = 'flex'
-  } else if (!isPrimaryMenuCompact) {
+  if (!isPrimaryMenuCompact) {
     overlayLayerDisplayType = 'hidden lg:flex'
-  }
-
-  const closeSecondaryMenu = () => {
-    setSecondaryMenuItem(null)
   }
 
   const menuClickPrimaryMenu = (item: MenuAsideItemPremium) => {
     if (item.menu) {
       setIsPrimaryMenuCompact(false)
     }
-
-    if (item.menuSecondary) {
-      if (secondaryMenuItem && item.key === secondaryMenuItem.key) {
-        closeSecondaryMenu()
-      } else {
-        setSecondaryMenuItem(item)
-      }
-    }
-  }
-
-  const menuClickSecondaryMenu = () => {
-    //
   }
 
   const overlayClick = () => {
-    if (secondaryMenuItem) {
-      closeSecondaryMenu()
-    } else if (!isPrimaryMenuCompact) {
+    if (!isPrimaryMenuCompact) {
       setIsPrimaryMenuCompact(true)
     }
   }
 
   useEffect(() => {
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && (secondaryMenuItem || !isPrimaryMenuCompact)) {
+      if (e.key === 'Escape' && (!isPrimaryMenuCompact)) {
         overlayClick()
       }
     })
@@ -100,8 +78,7 @@ const AsideMenu = ({ menu }: Props) => {
         menu={menu}
         className={asideMenuLayerClassName}
         isCompact={isPrimaryMenuCompact}
-        zIndex={secondaryMenuItem ? 'z-40 md:z-50' : 'z-50'}
-        activeSecondaryMenuKey={secondaryMenuItem?.key}
+        zIndex='z-50'
         onMenuClick={menuClickPrimaryMenu}
         footer={
           <ul className="hidden lg:block">
@@ -114,25 +91,10 @@ const AsideMenu = ({ menu }: Props) => {
         }
       >
         <div className="flex-1 px-3 flex justify-center">
-          <b className="font-black">One</b>
+          {isPrimaryMenuCompact && (<b className="font-black">2x2</b>)}
+          {!isPrimaryMenuCompact && (<b className="font-black">two x two</b>)}
         </div>
       </AsideMenuLayer>
-      {!!secondaryMenuItem && (
-        <AsideMenuLayer
-          menu={secondaryMenuItem.menuSecondary}
-          className={`right-0 md:right-auto animate-fade-in-right-fast lg:animate-fade-in-left-fast ${
-            isPrimaryMenuCompact ? 'lg:left-22' : 'md:left-60'
-          }`}
-          onMenuClick={menuClickSecondaryMenu}
-        >
-          {!!secondaryMenuItem.icon && <BaseIcon path={secondaryMenuItem.icon} w="w-16" />}
-          <div className="flex-1">{secondaryMenuItem.label}</div>
-          <button onClick={closeSecondaryMenu} className="flex items-center justify-center">
-            <BaseIcon path={mdiClose} w="w-12" />
-          </button>
-        </AsideMenuLayer>
-      )}
-
       <OverlayLayer type={overlayLayerDisplayType} zIndex="z-40" onClick={overlayClick} />
     </>
   )

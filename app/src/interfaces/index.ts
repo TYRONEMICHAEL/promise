@@ -1,7 +1,5 @@
 export type UserPayloadObject = {
-  name: string
-  email: string
-  avatar: string
+  isConnected: boolean 
 }
 
 export type MenuAsideItem = {
@@ -24,6 +22,7 @@ export type MenuNavBarItem = {
   isDesktopNoLabel?: boolean
   isToggleLightDark?: boolean
   isCurrentUser?: boolean
+  isConnect?: boolean
   menu?: MenuNavBarItem[]
 }
 
