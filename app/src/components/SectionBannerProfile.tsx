@@ -1,6 +1,7 @@
 import { mdiGithub } from '@mdi/js'
 import BaseButton from '../components/BaseButton'
 import SectionBanner from '../components/SectionBanner'
+import { githubUrl } from '../config'
 
 const SectionBannerProfile = () => {
   return (
@@ -10,7 +11,7 @@ const SectionBannerProfile = () => {
       </h1>
       <div>
         <BaseButton
-          href="https://github.com/justboil/admin-one-react-tailwind"
+          href={githubUrl}
           icon={mdiGithub}
           label="GitHub"
           target="_blank"

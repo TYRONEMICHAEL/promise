@@ -5,38 +5,28 @@ import BaseButton from '../../BaseButton'
 import { useEffect } from 'react'
 import { useAppDispatch } from '../../../stores/hooks'
 import { setConnected } from '../../../stores/mainSlice'
+import { getWalletPublicKey } from '../../../utils/wallet'
 
 export default function WalletNavBarButton() {
   const dispatch = useAppDispatch()
-  const {
-    connected: isConnected,
-    connecting: isConnecting,
-    publicKey,
-    disconnect: disconnectWallet,
-  } = useWallet()
+  const wallet = useWallet()
   const { setVisible } = useWalletModal()
 
   useEffect(() => {
-    dispatch(setConnected({ isConnected }))
-  }, [dispatch, isConnected])
+    dispatch(setConnected({ isConnected: wallet.connected }))
+  }, [dispatch, wallet])
 
   const connect = () => {
     setVisible(true)
   }
 
   const disconnect = () => {
-    disconnectWallet()
+    wallet.disconnect()
   }
-
-  const formattedPublicKey = publicKey?.toString()
-  const truncatedPublicKey = `${formattedPublicKey?.substring(
-    0,
-    Math.min(formattedPublicKey.length, 6)
-  )}...`
 
   return (
     <div className="block lg:flex items-center relative cursor-pointer">
-      {!isConnected && !isConnecting && (
+      {!wallet.connected && !wallet.connecting && (
         <BaseButton
           onClick={connect}
           color="contrast"
@@ -48,7 +38,7 @@ export default function WalletNavBarButton() {
           disabled={false}
         />
       )}
-      {!isConnected && isConnecting && (
+      {!wallet.connected && wallet.connecting && (
         <BaseButton
           onClick={connect}
           color="contrast"
@@ -60,11 +50,11 @@ export default function WalletNavBarButton() {
           disabled={true}
         />
       )}
-      {isConnected && publicKey && (
+      {wallet.connected && (
         <BaseButton
           onClick={disconnect}
           color="contrast"
-          label={truncatedPublicKey}
+          label={getWalletPublicKey(wallet)}
           icon={mdiOpenInNew}
           outline={false}
           small={true}

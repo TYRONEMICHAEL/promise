@@ -8,6 +8,7 @@ type Props = {
   color: ColorKey
   w?: string
   h?: string
+  size?: string
   bg?: boolean
   className?: string
 }
@@ -17,6 +18,7 @@ export default function IconRounded({
   color,
   w = 'w-12',
   h = 'h-12',
+  size = '24',
   bg = false,
   className = '',
 }: Props) {
@@ -27,7 +29,7 @@ export default function IconRounded({
       path={icon}
       w={w}
       h={h}
-      size="24"
+      size={size}
       className={`rounded-full ${classAddon} ${className}`}
     />
   )

@@ -1,12 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { ConnectedPayloadObject } from '../interfaces'
 
 interface MainState {
   isConnected: boolean
+  solBalance: number
 }
 
 const initialState: MainState = {
-  isConnected: false
+  isConnected: false,
+  solBalance: 0
 }
 
 export const mainSlice = createSlice({
@@ -16,10 +17,21 @@ export const mainSlice = createSlice({
     setConnected: (state, action: PayloadAction<ConnectedPayloadObject>) => {
       state.isConnected = action.payload.isConnected
     },
+    setAccountInfo: (state, action: PayloadAction<AccountInfoPayloadObject>) => {
+      state.solBalance = action.payload.solBalance
+    }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { setConnected } = mainSlice.actions
+export const { setConnected, setAccountInfo } = mainSlice.actions
+
+type ConnectedPayloadObject = {
+  isConnected: boolean 
+}
+
+type AccountInfoPayloadObject = {
+  solBalance: number
+}
 
 export default mainSlice.reducer
