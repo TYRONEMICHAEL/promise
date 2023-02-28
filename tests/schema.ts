@@ -67,10 +67,12 @@ export class SolWager {
 }
 
 export class PromiseeRuleset {
-  @field({ type: option(SolWager) })
-  solWager: SolWager;
   @field({ type: option(EndDate) })
   endDate: EndDate;
+
+  public constructor(endDate?: EndDate) {
+    this.endDate = endDate;
+  }
 }
 
 export class SolReward {

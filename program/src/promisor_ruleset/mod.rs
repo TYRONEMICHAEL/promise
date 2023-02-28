@@ -28,11 +28,11 @@ pub trait Condition {
     }
 
     // Perform any post-action logic.
-    fn post_action<'info>(
+    fn post_action<'c, 'info>(
         &self,
         _promisor: &Account<Promisor>,
-        _promise: &Account<Promise>,
-        _remaining_accounts: &[AccountInfo],
+        _promise: &Account<'info, Promise>,
+        _remaining_accounts: &'c [AccountInfo<'info>],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())

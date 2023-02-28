@@ -28,4 +28,6 @@ pub enum PromiseError {
     PromiseExpired,
     #[msg("Not enough accounts provided")]
     NotEnoughAccounts,
+    #[msg("Promisee cannot accept. Ruleset does not allow it")]
+    PromiseeCannotAccept,
 }

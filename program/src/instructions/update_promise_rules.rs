@@ -8,7 +8,7 @@ use anchor_lang::{
 use crate::{
     errors::PromiseError,
     promisor_ruleset::EvaluationContext,
-    state::{promisor_rules::PromisorRules, Promise, PromiseState, Promisor, PromisorState},
+    state::{promisor_rules::PromisorRules, Promise, Promisor, PromisorState},
 };
 
 #[derive(Accounts)]
@@ -90,67 +90,5 @@ pub fn update_promise_rules<'info>(
         // TODO: add a way to reclaim lamports
     }
 
-    Ok(())
-}
-
-#[derive(Accounts)]
-#[instruction(state: PromiseState)]
-pub struct UpdatePromiseState<'info> {
-    #[account(mut, constraint = promisor.key() == promisor.key())]
-    pub promise: Account<'info, Promise>,
-    #[account(mut, constraint = promisor_owner.key() == promisor.owner.key())]
-    pub promisor: Account<'info, Promisor>,
-    #[account(mut)]
-    pub promisor_owner: Signer<'info>,
-    pub system_program: Program<'info, System>,
-}
-
-pub fn update_promise_state<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromiseState<'info>>, state: PromiseState) -> Result<()> {
-    match state {
-        PromiseState::Created => Err(PromiseError::InvalidPromiseState.into()),
-        PromiseState::Active => {
-            if ctx.accounts.promise.state == PromiseState::Created {
-                return set_active(ctx, state);
-            }
-            Err(PromiseError::InvalidPromiseState.into())
-        }
-        PromiseState::Completed => {
-            // Run the post_action ruleset here
-            Err(PromiseError::InvalidPromiseState.into())
-        }
-        PromiseState::Voided => {
-            // Run the post_action ruleset here
-            Err(PromiseError::InvalidPromiseState.into())
-        }
-    }
-}
-
-fn set_active<'b, 'info>(ctx: Context<'_, 'b, '_, 'info, UpdatePromiseState<'info>>, state: PromiseState) -> Result<()> {
-    let promise = &ctx.accounts.promise;
-    let rules = match PromisorRules::try_from_slice(&promise.promisor_data) {
-        Ok(rules) => rules,
-        Err(e) => {
-            msg!("Error deserializing promisor ruleset: {}", e);
-            return Err(PromiseError::DeserializationError.into());
-        }
-    };
-
-    let conditions = rules.enabled_conditions();
-
-    let mut evaluation_context = EvaluationContext {
-        account_cursor: 0,
-        indices: BTreeMap::new(),
-    };
-
-    for condition in &conditions {
-        condition.pre_action(
-            &ctx.accounts.promisor,
-            &ctx.accounts.promise,
-            &ctx.remaining_accounts,
-            &mut evaluation_context,
-        )?;
-    }
-
-    ctx.accounts.promise.state = state;
     Ok(())
 }

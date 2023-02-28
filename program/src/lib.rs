@@ -32,10 +32,6 @@ pub mod promise {
         instructions::initialize_promisor(ctx, bump)
     }
 
-    pub fn initialize_promisee<'info>(ctx: Context<InitializePromisee>, bump: u8) -> Result<()> {
-        instructions::initialize_promisee(ctx, bump)
-    }
-
     pub fn update_promisor<'info>(
         ctx: Context<UpdatePromisor>,
         state: PromisorState,
@@ -53,7 +49,7 @@ pub mod promise {
         instructions::initialize_promise(ctx, id, promisor_data, promisee_data, bump)
     }
 
-    pub fn update_promise<'info>(
+    pub fn update_promise_rules<'info>(
         ctx: Context<'_, '_, '_, 'info, UpdatePromiseRules<'info>>,
         promisor_data: Vec<u8>,
         promisee_data: Vec<u8>,
@@ -61,10 +57,16 @@ pub mod promise {
         instructions::update_promise_rules(ctx, promisor_data, promisee_data)
     }
 
-    pub fn update_promise_state<'info>(
-        ctx: Context<'_, '_, '_, 'info, UpdatePromiseState<'info>>,
-        state: PromiseState,
+    pub fn update_promise_active<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdatePromiseActive<'info>>
     ) -> Result<()> {
-        instructions::update_promise_state(ctx, state)
+        instructions::update_promise_active(ctx)
+    }
+
+    pub fn update_promise_accept<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdatePromiseAccept<'info>>,
+        bump: u8,
+    ) -> Result<()> {
+        instructions::update_promise_accept(ctx, bump)
     }
 }

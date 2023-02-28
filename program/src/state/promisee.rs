@@ -7,7 +7,7 @@ pub struct Promisee {
     // The owner of this account
     pub owner: Pubkey,
     // The promise network this account belongs to
-    pub promise_network: Pubkey,
+    pub promise: Pubkey,
     // The time this account was created
     pub created_at: i64,
     // The last time this account was updated
