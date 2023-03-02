@@ -5,17 +5,18 @@ import BaseButtons from '../components/BaseButtons'
 import BaseIcon from '../components/BaseIcon'
 import CardBox from '../components/CardBox'
 import IconRounded from '../components/IconRounded'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 import PillTagPlain from '../components/PillTagPlain'
 import SectionBannerProfile from '../components/SectionBannerProfile'
 import SectionMain from '../components/SectionMain'
 import SectionTitleLineWithButton from '../components/SectionTitleLineWithButton'
 import UserCardProfileNumber from '../components/UserCardProfileNumber'
 import LayoutApp from '../layouts/App'
-import { getWalletPublicKey } from '../utils/wallet'
+import { getWalletBalance } from '../services/account'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
-import { setAccountInfo } from '../stores/mainSlice'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { LoadingIndicator } from '../components/LoadingIndicator'
+import { setAccountInfo, setSquads } from '../stores/mainSlice'
+import { getWalletPublicKey } from '../utils/wallet'
+import { getSquadsForWallet } from '../services/squads'
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch()
@@ -23,21 +24,27 @@ const ProfilePage = () => {
   const wallet = useWallet()
   const { connection } = useConnection()
   const [isLoadingSol, setIsLoadingSol] = useState(false)
+  const [isLoadingSquads, setIsLoadingSquads] = useState(false)
 
   useEffect(() => {
     if (!wallet.publicKey) return
 
     setIsLoadingSol(true)
-    connection
-      .getAccountInfo(wallet.publicKey)
-      .then((info) => {
-        if (info) {
-          console.log(info.data);
-          dispatch(setAccountInfo({ solBalance: info.lamports / LAMPORTS_PER_SOL }))
-        }
+    getWalletBalance(connection, wallet)
+      .then((balance) => {
+        dispatch(setAccountInfo({ solBalance: balance }))
       })
       .finally(() => {
         setIsLoadingSol(false)
+      })
+
+    setIsLoadingSquads(true)
+    getSquadsForWallet(connection, wallet)
+      .then((squads) => {
+        dispatch(setSquads({ squads }))
+      })
+      .finally(() => {
+        setIsLoadingSquads(false)
       })
   }, [dispatch, wallet, connection])
 
@@ -67,8 +74,13 @@ const ProfilePage = () => {
                 </BaseButtons>
                 <BaseButtons className="mt-6" classAddon="mr-9 last:mr-0 mb-3">
                   {isLoadingSol && <LoadingIndicator />}
-                  {!isLoadingSol && <UserCardProfileNumber number={user.solBalance} label="Balance" />}
-                  <UserCardProfileNumber number={0} label="Squads" />
+                  {!isLoadingSol && (
+                    <UserCardProfileNumber number={user.solBalance} label="Balance" />
+                  )}
+                  {isLoadingSquads && <LoadingIndicator />}
+                  {!isLoadingSquads && (
+                    <UserCardProfileNumber number={user.squads.length} label="Squads" />
+                  )}
                   <UserCardProfileNumber number={0} label="Matches" />
                 </BaseButtons>
               </div>

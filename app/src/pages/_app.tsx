@@ -17,6 +17,7 @@ import { ReactElement, ReactNode, useMemo } from 'react'
 import { Provider } from 'react-redux'
 import '../css/main.css'
 import { store } from '../stores/store'
+import { solanaWalletEndpoint } from '../env'
 
 export type NextPageWithLayout<P = Record<string, unknown>, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode
@@ -51,7 +52,7 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
   )
 
   return (
-    <ConnectionProvider endpoint="http://127.0.0.1:8899">
+    <ConnectionProvider endpoint={solanaWalletEndpoint}>
       <WalletProvider wallets={wallets} autoConnect={true}>
         <WalletModalProvider>
           <Provider store={store}>

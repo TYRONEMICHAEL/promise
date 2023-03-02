@@ -1,7 +1,3 @@
-export type UserPayloadObject = {
-  isConnected: boolean 
-}
-
 export type MenuAsideItem = {
   label: string
   icon?: string

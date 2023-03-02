@@ -1,4 +1,4 @@
-import { mdiOpenInNew } from '@mdi/js'
+import { mdiLoading, mdiOpenInNew, mdiWallet } from '@mdi/js'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import BaseButton from '../../BaseButton'
@@ -31,11 +31,8 @@ export default function WalletNavBarButton() {
           onClick={connect}
           color="contrast"
           label="Connect"
-          icon={mdiOpenInNew}
-          outline={false}
-          small={true}
-          roundedFull={false}
-          disabled={false}
+          icon={mdiWallet}
+          small
         />
       )}
       {!wallet.connected && wallet.connecting && (
@@ -43,11 +40,8 @@ export default function WalletNavBarButton() {
           onClick={connect}
           color="contrast"
           label="Connecting"
-          icon={mdiOpenInNew}
-          outline={false}
-          small={true}
-          roundedFull={false}
-          disabled={true}
+          icon={mdiLoading}
+          small
         />
       )}
       {wallet.connected && (
@@ -55,11 +49,8 @@ export default function WalletNavBarButton() {
           onClick={disconnect}
           color="contrast"
           label={getWalletPublicKey(wallet)}
-          icon={mdiOpenInNew}
-          outline={false}
-          small={true}
-          roundedFull={false}
-          disabled={false}
+          icon={mdiWallet}
+          small
         />
       )}
     </div>

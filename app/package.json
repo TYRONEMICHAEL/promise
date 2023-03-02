@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",
+    "@identity.com/sol-did-client": "^3.3.0",
+    "@identity.com/sol-did-idl": "^3.1.0",
     "@mdi/js": "^7.0.96",
     "@reduxjs/toolkit": "^1.8.5",
     "@solana/wallet-adapter-base": "^0.9.21",
@@ -17,6 +19,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.28",
     "@solana/wallet-adapter-wallets": "^0.19.12",
     "@solana/web3.js": "^1.73.2",
+    "@sqds/sdk": "^2.0.3",
     "chart.js": "^3.9.1",
     "formik": "^2.2.9",
     "next": "^13.0.4",

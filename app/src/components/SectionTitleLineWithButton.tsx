@@ -9,9 +9,10 @@ type Props = {
   title: string
   main?: boolean
   children?: ReactNode
+  excludeButton?: boolean
 }
 
-export default function SectionTitleLineWithButton({ icon, title, main = false, children }: Props) {
+export default function SectionTitleLineWithButton({ icon, title, main = false, excludeButton = false, children }: Props) {
   const hasChildren = !!Children.count(children)
 
   return (
@@ -22,7 +23,7 @@ export default function SectionTitleLineWithButton({ icon, title, main = false, 
         <h1 className={`leading-tight ${main ? 'text-3xl' : 'text-2xl'}`}>{title}</h1>
       </div>
       {children}
-      {!hasChildren && <BaseButton icon={mdiCog} color="whiteDark" />}
+      {!hasChildren && !excludeButton && <BaseButton icon={mdiCog} color="whiteDark" />}
     </section>
   )
 }
