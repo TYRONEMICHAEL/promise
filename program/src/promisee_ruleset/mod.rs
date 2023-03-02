@@ -1,38 +1,38 @@
-use anchor_lang::prelude::Context;
 use std::collections::BTreeMap;
 mod promise_end_date;
-mod sol_wager;
 
 pub use anchor_lang::prelude::*;
 pub use promise_end_date::PromiseEndDate;
-pub use sol_wager::SolWager;
 
-use crate::instructions::initialize_promise::InitializePromise;
+use crate::{state::{Promisee, Promise}};
 
 pub trait Condition {
     // Validate the inputs pass the condition.
-    fn validate<'info>(
+    fn validate<'c, 'info>(
         &self,
-        promisee: &Pubkey,
-        ctx: &Context<InitializePromise<'info>>,
+        promisee: &Account<Promisee>,
+        promise: &Account<'info, Promise>,
+        remaining_accounts: &'c [AccountInfo<'info>],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()>;
 
     // Perform any pre-action logic.
-    fn pre_action<'info>(
+    fn pre_action<'c, 'info>(
         &self,
-        _promisee: &Pubkey,
-        _ctx: &Context<InitializePromise<'info>>,
+        _promisee: &Account<Promisee>,
+        _promise: &Account<'info, Promise>,
+        _remaining_accounts: &'c [AccountInfo<'info>],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())
     }
 
     // Perform any post-action logic.
-    fn post_action<'info>(
+    fn post_action<'c, 'info>(
         &self,
-        _promisee: &Pubkey,
-        _ctx: &Context<InitializePromise<'info>>,
+        _promisee: &Account<Promisee>,
+        _promise: &Account<'info, Promise>,
+        _remaining_accounts: &'c [AccountInfo<'info>],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         Ok(())

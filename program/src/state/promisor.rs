@@ -20,6 +20,8 @@ pub struct Promisor {
     // The state of this account
     pub state: PromisorState,
     // The last time this account was updated
+    pub created_at: i64,
+    // The last time this account was updated
     pub updated_at: i64,
     // The number of promises this promisor has made
     // Will be used for seed generation
@@ -33,6 +35,7 @@ impl Promisor {
     32 + // owner
     32 + // promise_network
     1 + // state
+    8 + // created_at
     8 + // updated_at
     4; // num_promises
 }

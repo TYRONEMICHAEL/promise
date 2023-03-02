@@ -14,15 +14,16 @@ impl Rule for PromiseEndDate {
 }
 
 impl Condition for PromiseEndDate {
-    fn validate<'info>(
+    fn validate<'c, 'info>(
         &self,
-        _promisee: &Pubkey,
-        _ctx: &Context<InitializePromise>,
+        _promisee: &Account<Promisee>,
+        _promise: &Account<'info, Promise>,
+        _remaining_accounts: &'c [AccountInfo<'info>],
         _evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         let clock = Clock::get()?;
         if clock.unix_timestamp >= self.date {
-            return err!(PromiseError::PromiseExpired);
+            return err!(PromiseError::PromiseeCannotAccept);
         }
 
         Ok(())
