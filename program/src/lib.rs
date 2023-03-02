@@ -63,6 +63,12 @@ pub mod promise {
         instructions::update_promise_active(ctx)
     }
 
+    pub fn update_promise_completed<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdatePromiseCompleted<'info>>
+    ) -> Result<()> {
+        instructions::update_promise_completed(ctx)
+    }
+
     pub fn update_promise_accept<'info>(
         ctx: Context<'_, '_, '_, 'info, UpdatePromiseAccept<'info>>,
         bump: u8,

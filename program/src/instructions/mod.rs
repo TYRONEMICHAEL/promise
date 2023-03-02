@@ -5,6 +5,7 @@ pub mod update_network;
 pub mod update_promise_active;
 pub mod update_promise_rules;
 pub mod update_promise_accept;
+pub mod update_promise_completed;
 pub mod update_promisor;
 
 pub use initialize_network::*;
@@ -15,3 +16,4 @@ pub use update_promise_active::*;
 pub use update_promise_rules::*;
 pub use update_promisor::*;
 pub use update_promise_accept::*;
+pub use update_promise_completed::*;

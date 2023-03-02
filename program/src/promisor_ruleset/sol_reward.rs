@@ -75,33 +75,19 @@ impl Condition for SolReward {
 
     fn post_action<'c, 'info>(
         &self,
-        promisor: &Account<Promisor>,
+        _promisor: &Account<Promisor>,
         promise: &Account<'info, Promise>,
         remaining_accounts: &'c [AccountInfo<'info>],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         let index = evaluation_context.account_cursor;
         let to_account = &remaining_accounts[index];
-        let system_account = &remaining_accounts[index + 1];
-
-        evaluation_context.account_cursor += 2;
-
-        assert_keys_equal(&promisor.owner.key(), &to_account.key())?;
+        evaluation_context.account_cursor += 1;
 
         msg!("Transferring {} lamports to {}", self.lamports, to_account.key());
 
-        invoke(
-            &system_instruction::transfer(
-                &promise.key(),
-                &to_account.key(),
-                self.lamports,
-            ),
-            &[
-                to_account.to_account_info(),
-                promise.to_account_info(),
-                system_account.to_account_info(),
-            ],
-        )?;
+        **promise.to_account_info().try_borrow_mut_lamports()? -= self.lamports;
+        **to_account.try_borrow_mut_lamports()? += self.lamports;
 
         Ok(())
     }
