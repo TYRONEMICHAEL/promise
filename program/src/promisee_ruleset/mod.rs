@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 mod promise_end_date;
+mod sol_wager;
 
 pub use anchor_lang::prelude::*;
 pub use promise_end_date::PromiseEndDate;
+pub use sol_wager::SolWager;
 
 use crate::{state::{Promisee, Promise}};
 
