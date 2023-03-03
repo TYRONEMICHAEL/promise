@@ -70,8 +70,12 @@ export class PromiseeRuleset {
   @field({ type: option(EndDate) })
   endDate: EndDate;
 
-  public constructor(endDate?: EndDate) {
+  @field({ type: option(SolWager) })
+  solWager: SolWager;
+
+  public constructor(endDate?: EndDate, solWager?: SolWager) {
     this.endDate = endDate;
+    this.solWager = solWager;
   }
 }
 
