@@ -1,28 +1,35 @@
-import fs from "fs";
 import { AnchorProvider, Program } from "@project-serum/anchor";
+import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
+import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
 import {
+  ConfirmOptions,
   Connection,
   Keypair,
   PublicKey,
   SystemProgram,
+  Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
+import fs from "fs";
 import { Promise as PromiseAccount } from "../../target/types/promise";
 import { Network, createNetworkSeeds } from "./network/Network";
 import { NetworkRuleset } from "./network/NetworkRuleset";
+import { PromiseFilter, fromPromiseFilter } from "./promise/PromiseFilter";
+import { PromiseProtocol, createPromiseSeeds } from "./promise/PromiseProtocol";
+import { toPromiseState } from "./promise/PromiseState";
+import { Promisee, createPromiseeSeeds } from "./promisee/Promisee";
+import { PromiseeFilter, fromPromiseeFilter } from "./promisee/PromiseeFilter";
+import { PromiseeRuleset } from "./promisee/PromiseeRuleset";
 import { Promisor, createPromisorSeeds } from "./promisor/Promisor";
+import { PromisorFilter, fromPromisorFilter } from "./promisor/PromisorFilter";
+import { PromisorRuleset } from "./promisor/PromisorRuleset";
 import {
   PromisorState,
   fromPromisorState,
   toPromisorState,
 } from "./promisor/PromisorState";
-import { PromiseProtocol, createPromiseSeeds } from "./promise/PromiseProtocol";
-import { toPromiseState } from "./promise/PromiseState";
-import { PromiseeRuleset } from "./promisee/PromiseeRuleset";
-import { PromisorRuleset } from "./promisor/PromisorRuleset";
-import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
-import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-import { Promisee, createPromiseeSeeds } from "./promisee/Promisee";
+import { MethodsBuilder } from "@project-serum/anchor/dist/cjs/program/namespace/methods";
+import { AllInstructions } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 
 const idl = require("./promise.json");
 const programID = new PublicKey(idl.metadata.address);
@@ -30,6 +37,7 @@ const programID = new PublicKey(idl.metadata.address);
 export class PromiseSDK {
   program: Program<PromiseAccount>;
   wallet: Wallet;
+  private rpcOptions: ConfirmOptions = { commitment: "finalized" };
 
   public constructor(connection: Connection, wallet: Wallet) {
     const provider = new AnchorProvider(
@@ -106,27 +114,43 @@ export class PromiseSDK {
    * @returns Newly created Network.
    */
   public async createNetwork(ruleset: NetworkRuleset): Promise<Network> {
-    const data = ruleset.toData() as Buffer;
-    const seeds = createNetworkSeeds(this.wallet.publicKey);
-    const [networkAccount, networkBump] = PublicKey.findProgramAddressSync(
-      seeds,
-      this.getProgramId()
+    const [method, networkAccount] = this._buildCreateNetwork(
+      ruleset,
+      this.wallet.publicKey
     );
-    const signature = await this.program.methods
-      .initializeNetwork(data, networkBump)
-      .accounts({
-        promiseNetwork: networkAccount,
-        authority: this.wallet.publicKey,
-      })
-      .rpc();
 
-    await this.confirmTransaction(signature);
-
+    await method.rpc(this.rpcOptions);
     const network = await this.getNetwork(networkAccount);
     if (network == null)
       throw new Error("Failed to create network for unknown reason.");
 
     return network;
+  }
+
+  public async buildCreateNetwork(
+    ruleset: NetworkRuleset,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildCreateNetwork(ruleset, owner)[0].instruction();
+  }
+
+  private _buildCreateNetwork(
+    ruleset: NetworkRuleset,
+    owner: PublicKey
+  ): [PromiseMethods, PublicKey] {
+    const data = ruleset.toData() as Buffer;
+    const seeds = createNetworkSeeds(owner);
+    const [networkAccount, networkBump] = PublicKey.findProgramAddressSync(
+      seeds,
+      this.getProgramId()
+    );
+    return [
+      this.program.methods.initializeNetwork(data, networkBump).accounts({
+        promiseNetwork: networkAccount,
+        authority: owner,
+      }),
+      networkAccount,
+    ];
   }
 
   /**
@@ -139,23 +163,40 @@ export class PromiseSDK {
     network: Network,
     ruleset: NetworkRuleset
   ): Promise<Network> {
-    const data = ruleset.toData();
-
-    const signature = await this.program.methods
-      .updateNetwork(data)
-      .accounts({
-        promiseNetwork: network.address,
-        authority: this.wallet.publicKey,
-      })
-      .rpc();
-
-    await this.confirmTransaction(signature);
+    await this._buildUpdateNetwork(network, ruleset, this.wallet.publicKey).rpc(
+      this.rpcOptions
+    );
 
     const updatedNetwork = await this.getNetwork(network.address);
     if (updatedNetwork == null)
       throw new Error("Failed to update network for unknown reason.");
 
     return updatedNetwork;
+  }
+
+  public async buildUpdateNetwork(
+    network: Network,
+    ruleset: NetworkRuleset,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildUpdateNetwork(
+      network,
+      ruleset,
+      owner
+    ).instruction();
+  }
+
+  private _buildUpdateNetwork(
+    network: Network,
+    ruleset: NetworkRuleset,
+    owner: PublicKey
+  ): PromiseMethods {
+    const data = ruleset.toData();
+
+    return this.program.methods.updateNetwork(data).accounts({
+      promiseNetwork: network.address,
+      authority: owner,
+    });
   }
 
   /**
@@ -175,8 +216,9 @@ export class PromiseSDK {
     };
   }
 
-  public async getPromisors(): Promise<Promisor[]> {
-    const promisors = await this.program.account.promisor.all();
+  public async getPromisors(filter?: PromisorFilter): Promise<Promisor[]> {
+    const filters = fromPromisorFilter(filter);
+    const promisors = await this.program.account.promisor.all(filters);
     return promisors.map((promisor) => {
       return {
         address: promisor.publicKey,
@@ -189,53 +231,87 @@ export class PromiseSDK {
   }
 
   public async createPromisor(network: Network): Promise<Promisor> {
-    const seeds = createPromisorSeeds(network.address, this.wallet.publicKey);
-
-    const [promisorAccount, promisorBump] = PublicKey.findProgramAddressSync(
-      seeds,
-      this.getProgramId()
+    const [method, promisorAccount] = this._buildCreatePromisor(
+      network,
+      this.wallet.publicKey
     );
 
-    const signature = await this.program.methods
-      .initializePromisor(promisorBump)
-      .accounts({
-        promisor: promisorAccount,
-        owner: this.wallet.publicKey,
-        promiseNetwork: network.address,
-      })
-      .rpc();
-
-    await this.confirmTransaction(signature);
-
+    await method.rpc(this.rpcOptions);
     const promisor = await this.getPromisor(promisorAccount);
-
     if (promisor == null)
       throw new Error("Failed to create promisor for unknown reason.");
 
     return promisor;
   }
 
+  public async buildCreatePromisor(
+    network: Network,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildCreatePromisor(network, owner)[0].instruction();
+  }
+
+  private _buildCreatePromisor(
+    network: Network,
+    owner: PublicKey
+  ): [PromiseMethods, PublicKey] {
+    const seeds = createPromisorSeeds(network.address, owner);
+
+    const [promisorAccount, promisorBump] = PublicKey.findProgramAddressSync(
+      seeds,
+      this.getProgramId()
+    );
+
+    return [
+      this.program.methods.initializePromisor(promisorBump).accounts({
+        promisor: promisorAccount,
+        owner: owner,
+        promiseNetwork: network.address,
+      }),
+      promisorAccount,
+    ];
+  }
+
   public async updatePromisor(
     promisor: Promisor,
     state: PromisorState
   ): Promise<Promisor> {
-    const signature = await this.program.methods
-      .updatePromisor(fromPromisorState(state))
-      .accounts({
-        promisor: promisor.address,
-        owner: this.wallet.publicKey,
-        promiseNetwork: promisor.network,
-        authority: this.wallet.publicKey,
-      })
-      .rpc();
-
-    await this.confirmTransaction(signature);
+    await this._buildUpdatePromisor(promisor, state, this.wallet.publicKey).rpc(
+      this.rpcOptions
+    );
 
     const updatePromisor = await this.getPromisor(promisor.address);
     if (updatePromisor == null)
       throw new Error("Failed to update promisor for unknown reason.");
 
     return updatePromisor;
+  }
+
+  public async buildUpdatePromisor(
+    promisor: Promisor,
+    state: PromisorState,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildUpdatePromisor(
+      promisor,
+      state,
+      owner
+    ).instruction();
+  }
+
+  private _buildUpdatePromisor(
+    promisor: Promisor,
+    state: PromisorState,
+    owner: PublicKey
+  ): PromiseMethods {
+    return this.program.methods
+      .updatePromisor(fromPromisorState(state))
+      .accounts({
+        promisor: promisor.address,
+        owner: owner,
+        promiseNetwork: promisor.network,
+        authority: owner,
+      });
   }
 
   /**
@@ -260,8 +336,9 @@ export class PromiseSDK {
     };
   }
 
-  public async getPromises(): Promise<PromiseProtocol[]> {
-    const promises = await this.program.account.promise.all();
+  public async getPromises(filter?: PromiseFilter): Promise<PromiseProtocol[]> {
+    const filters = fromPromiseFilter(filter);
+    const promises = await this.program.account.promise.all(filters);
     return promises.map((promise) => {
       return {
         id: promise.account.id,
@@ -281,39 +358,69 @@ export class PromiseSDK {
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset
   ): Promise<PromiseProtocol> {
+    const [method, promiseAccount] = this._buildCreatePromise(
+      promisor,
+      promisorRuleset,
+      promiseeRuleset,
+      this.wallet.publicKey
+    );
+
+    await method.rpc(this.rpcOptions);
+    const promise = await this.getPromise(promiseAccount);
+    if (promise == null)
+      throw new Error("Failed to create promise for unknown reason.");
+
+    return promise;
+  }
+
+  public async buildCreatePromise(
+    promisor: Promisor,
+    promisorRuleset: PromisorRuleset,
+    promiseeRuleset: PromiseeRuleset,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildCreatePromise(
+      promisor,
+      promisorRuleset,
+      promiseeRuleset,
+      owner
+    )[0].instruction();
+  }
+
+  private _buildCreatePromise(
+    promisor: Promisor,
+    promisorRuleset: PromisorRuleset,
+    promiseeRuleset: PromiseeRuleset,
+    owner: PublicKey
+  ): [PromiseMethods, PublicKey] {
     const id = promisor.numberOfPromises + 1;
     const promisorData = promisorRuleset.toData();
     const promiseeData = promiseeRuleset.toData();
     const seeds = createPromiseSeeds(promisor.network, promisor.address, id);
 
-    const [promiseAccount, promiseBump] =
-      await PublicKey.findProgramAddressSync(seeds, this.getProgramId());
+    const [promiseAccount, promiseBump] = PublicKey.findProgramAddressSync(
+      seeds,
+      this.getProgramId()
+    );
 
-    const signature = await this.program.methods
-      .initializePromise(id, promisorData, promiseeData, promiseBump)
-      .accounts({
-        promise: promiseAccount,
-        promisor: promisor.address,
-        promiseNetwork: promisor.network,
-        promisorOwner: this.wallet.publicKey,
-      })
-      .remainingAccounts([
-        {
-          pubkey: this.wallet.publicKey,
-          isWritable: true,
-          isSigner: true,
-        },
-      ])
-      .rpc();
-
-    await this.confirmTransaction(signature);
-
-    const promise = await this.getPromise(promiseAccount);
-
-    if (promise == null)
-      throw new Error("Failed to create promise for unknown reason.");
-
-    return promise;
+    return [
+      this.program.methods
+        .initializePromise(id, promisorData, promiseeData, promiseBump)
+        .accounts({
+          promise: promiseAccount,
+          promisor: promisor.address,
+          promiseNetwork: promisor.network,
+          promisorOwner: owner,
+        })
+        .remainingAccounts([
+          {
+            pubkey: owner,
+            isWritable: true,
+            isSigner: true,
+          },
+        ]),
+      promiseAccount,
+    ];
   }
 
   public async updatePromise(
@@ -321,48 +428,94 @@ export class PromiseSDK {
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset
   ): Promise<PromiseProtocol> {
-    const promisorData = promisorRuleset.toData();
-    const promiseeData = promiseeRuleset.toData();
-
-    const signature = await this.program.methods
-      .updatePromiseRules(promisorData, promiseeData)
-      .accounts({
-        promise: promise.address,
-        promisor: promise.promisor,
-        promisorOwner: this.wallet.publicKey,
-      })
-      .remainingAccounts([
-        {
-          pubkey: this.wallet.publicKey,
-          isWritable: true,
-          isSigner: true,
-        },
-      ])
-      .rpc();
-
-    await this.confirmTransaction(signature);
+    await this._buildUpdatePromise(
+      promise,
+      promisorRuleset,
+      promiseeRuleset,
+      this.wallet.publicKey
+    ).rpc(this.rpcOptions);
 
     const updatedPromise = await this.getPromise(promise.address);
-
     if (updatedPromise == null)
       throw new Error("Failed to update promise for unknown reason.");
 
     return updatedPromise;
   }
 
+  public async buildUpdatePromise(
+    promise: PromiseProtocol,
+    promisorRuleset: PromisorRuleset,
+    promiseeRuleset: PromiseeRuleset,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildUpdatePromise(
+      promise,
+      promisorRuleset,
+      promiseeRuleset,
+      owner
+    ).instruction();
+  }
+
+  private _buildUpdatePromise(
+    promise: PromiseProtocol,
+    promisorRuleset: PromisorRuleset,
+    promiseeRuleset: PromiseeRuleset,
+    owner: PublicKey
+  ): PromiseMethods {
+    const promisorData = promisorRuleset.toData();
+    const promiseeData = promiseeRuleset.toData();
+
+    return this.program.methods
+      .updatePromiseRules(promisorData, promiseeData)
+      .accounts({
+        promise: promise.address,
+        promisor: promise.promisor,
+        promisorOwner: owner,
+      })
+      .remainingAccounts([
+        {
+          pubkey: owner,
+          isWritable: true,
+          isSigner: true,
+        },
+      ]);
+  }
+
   public async activatePromise(
     promise: PromiseProtocol
   ): Promise<PromiseProtocol> {
-    const signature = await this.program.methods
+    await this._buildActivatePromise(promise, this.wallet.publicKey).rpc(
+      this.rpcOptions
+    );
+
+    const activatedPromise = await this.getPromise(promise.address);
+    if (activatedPromise == null)
+      throw new Error("Failed to activate promise for unknown reason.");
+
+    return activatedPromise;
+  }
+
+  public async buildActivatePromise(
+    promise: PromiseProtocol,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildActivatePromise(promise, owner).instruction();
+  }
+
+  private _buildActivatePromise(
+    promise: PromiseProtocol,
+    owner: PublicKey
+  ): PromiseMethods {
+    return this.program.methods
       .updatePromiseActive()
       .accounts({
         promise: promise.address,
         promisor: promise.promisor,
-        promisorOwner: this.wallet.publicKey,
+        promisorOwner: owner,
       })
       .remainingAccounts([
         {
-          pubkey: this.wallet.publicKey,
+          pubkey: owner,
           isWritable: true,
           isSigner: true,
         },
@@ -371,78 +524,95 @@ export class PromiseSDK {
           isWritable: false,
           isSigner: false,
         },
-      ])
-      .rpc();
-
-    await this.confirmTransaction(signature);
-
-    const activatedPromise = await this.getPromise(promise.address);
-
-    if (activatedPromise == null)
-      throw new Error("Failed to activate promise for unknown reason.");
-
-    return activatedPromise;
+      ]);
   }
 
   public async acceptPromise(promise: PromiseProtocol): Promise<Promisee> {
-    const seeds = createPromiseeSeeds(promise.address, this.wallet.publicKey);
-
-    const [promiseeAccount, promiseeBump] =
-      await PublicKey.findProgramAddressSync(seeds, this.getProgramId());
-
-    const signature = await this.program.methods
-      .updatePromiseAccept(promiseeBump)
-      .accounts({
-        promisee: promiseeAccount,
-        promiseeOwner: this.wallet.publicKey,
-        promise: promise.address,
-      })
-      .rpc();
-
-    await this.confirmTransaction(signature);
+    const [method, promiseeAccount] = this._buildAcceptPromise(
+      promise,
+      this.wallet.publicKey
+    );
+    await method.rpc(this.rpcOptions);
 
     const promisee = await this.getPromisee(promiseeAccount);
-
     if (promisee == null)
       throw new Error("Failed to accept promise for unknown reason.");
 
     return promisee;
   }
 
-  public async acceptPromiseInstruction(
+  public async buildAcceptPromise(
     promise: PromiseProtocol,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
+    return await this._buildAcceptPromise(promise, owner)[0].instruction();
+  }
+
+  private _buildAcceptPromise(
+    promise: PromiseProtocol,
+    owner: PublicKey
+  ): [PromiseMethods, PublicKey] {
     const seeds = createPromiseeSeeds(promise.address, owner);
+    const [promiseeAccount, promiseeBump] = PublicKey.findProgramAddressSync(
+      seeds,
+      this.getProgramId()
+    );
 
-    const [promiseeAccount, promiseeBump] =
-      await PublicKey.findProgramAddressSync(seeds, this.getProgramId());
-
-    return await this.program.methods
-      .updatePromiseAccept(promiseeBump)
-      .accounts({
+    return [
+      this.program.methods.updatePromiseAccept(promiseeBump).accounts({
         promisee: promiseeAccount,
         promiseeOwner: owner,
         promise: promise.address,
-      })
-      .instruction();
+      }),
+      promiseeAccount,
+    ];
   }
 
   public async completePromise(
     promise: PromiseProtocol,
     promisee: Promisee
   ): Promise<PromiseProtocol> {
-    const signature = await this.program.methods
+    await this._buildCompletePromise(
+      promise,
+      promisee,
+      this.wallet.publicKey
+    ).rpc(this.rpcOptions);
+
+    const completedPromise = await this.getPromise(promise.address);
+    if (completedPromise == null)
+      throw new Error("Failed to complete promise for unknown reason.");
+
+    return completedPromise;
+  }
+
+  public async buildCompletePromise(
+    promise: PromiseProtocol,
+    promisee: Promisee,
+    owner: PublicKey
+  ): Promise<TransactionInstruction> {
+    return await this._buildCompletePromise(
+      promise,
+      promisee,
+      owner
+    ).instruction();
+  }
+
+  private _buildCompletePromise(
+    promise: PromiseProtocol,
+    promisee: Promisee,
+    owner: PublicKey
+  ): PromiseMethods {
+    return this.program.methods
       .updatePromiseCompleted()
       .accounts({
         promisee: promisee.address,
         promisor: promise.promisor,
-        promisorOwner: this.wallet.publicKey,
+        promisorOwner: owner,
         promise: promise.address,
       })
       .remainingAccounts([
         {
-          pubkey: this.wallet.publicKey,
+          pubkey: owner,
           isWritable: true,
           isSigner: false,
         },
@@ -451,17 +621,7 @@ export class PromiseSDK {
           isWritable: false,
           isSigner: false,
         },
-      ])
-      .rpc();
-
-    await this.confirmTransaction(signature);
-
-    const completedPromise = await this.getPromise(promise.address);
-
-    if (completedPromise == null)
-      throw new Error("Failed to complete promise for unknown reason.");
-
-    return completedPromise;
+      ]);
   }
 
   /**
@@ -482,8 +642,9 @@ export class PromiseSDK {
     };
   }
 
-  public async getPromisees(): Promise<Promisee[]> {
-    const promisees = await this.program.account.promisee.all();
+  public async getPromisees(filter?: PromiseeFilter): Promise<Promisee[]> {
+    const filters = fromPromiseeFilter(filter);
+    const promisees = await this.program.account.promisee.all(filters);
     return promisees.map((promisee) => {
       return {
         address: promisee.publicKey,
@@ -519,3 +680,8 @@ export class PromiseSDK {
     }
   }
 }
+
+export type PromiseMethods = MethodsBuilder<
+  PromiseAccount,
+  AllInstructions<PromiseAccount>
+>;

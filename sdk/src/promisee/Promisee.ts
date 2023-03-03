@@ -2,11 +2,11 @@ import { PublicKey } from "@solana/web3.js";
 
 export type Promisee = {
   address: PublicKey;
+  bump: Number;
   owner: PublicKey;
   promise: PublicKey;
   createdAt: Date;
   updatedAt: Date;
-  bump: Number;
 };
 
 export const createPromiseeSeeds = (
