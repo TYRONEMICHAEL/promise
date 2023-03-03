@@ -23,10 +23,10 @@ export class NetworkRuleset {
   }
 
   public static fromData(data: Uint8Array | Buffer): NetworkRuleset {
-    return deserialize(data, NetworkRuleset);
+    return deserialize(Buffer.from(data), NetworkRuleset);
   }
 
   public toData(): Buffer {
-    return serialize(this) as Buffer;
+    return Buffer.from(serialize(this))
   }
 }
