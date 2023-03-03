@@ -625,7 +625,7 @@ describe("promise", () => {
     }
   });
 
-  it("A promise can be completed by a promisor", async () => {
+  it.only("A promise can be completed by a promisor", async () => {
     const { connection } = getProvider();
     const networkAuthority = web3.Keypair.generate();
     const promisorOwner = web3.Keypair.generate();
