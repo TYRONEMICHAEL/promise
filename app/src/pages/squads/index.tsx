@@ -1,20 +1,18 @@
 import { mdiAccountGroup } from '@mdi/js'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import Head from 'next/head'
 import { ReactElement, useEffect, useState } from 'react'
+import BaseButton from '../../components/BaseButton'
+import CardBoxComponentEmpty from '../../components/CardBoxComponentEmpty'
+import { LoadingIndicator } from '../../components/LoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
-import LayoutApp from '../../layouts/App'
-import BaseButton from '../../components/BaseButton'
-import { useAppDispatch, useAppSelector } from '../../stores/hooks'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { Squad, createSquadForWallet, getSquadsForWallet } from '../../services/squads'
-import { setSquads } from '../../stores/mainSlice'
-import CardBox from '../../components/CardBox'
-import CardBoxComponentEmpty from '../../components/CardBoxComponentEmpty'
-import Head from 'next/head'
 import { getPageTitle } from '../../config'
-import { LoadingIndicator } from '../../components/LoadingIndicator'
-import IconRounded from '../../components/IconRounded'
-import UserCardProfileNumber from '../../components/UserCardProfileNumber'
+import LayoutApp from '../../layouts/App'
+import { getSquadsForWallet } from '../../services/squads'
+import { useAppDispatch, useAppSelector } from '../../stores/hooks'
+import { setSquads } from '../../stores/mainSlice'
+import { SquadComponent } from '../../components/SquadComponent'
 
 const SquadsPage = () => {
   const dispatch = useAppDispatch()
@@ -64,29 +62,6 @@ const SquadsPage = () => {
           </div>
         )}
       </SectionMain>
-    </>
-  )
-}
-
-type Props = {
-  squad: Squad
-}
-
-const SquadComponent = ({ squad }: Props) => {
-  return (
-    <>
-      <CardBox>
-        <div className="flex items-center justify-between">
-          <div>
-            <IconRounded icon={mdiAccountGroup} color="light" className="mr-3" bg />
-            <h3 className="text-lg leading-tight text-gray-500 dark:text-slate-400">
-              {squad.name}
-            </h3>
-
-            <UserCardProfileNumber number={squad.members.length} label="Members" />
-          </div>
-        </div>
-      </CardBox>
     </>
   )
 }

@@ -1,16 +1,19 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { Squad } from '../services/squads'
+import { Match } from '../services/matches'
 
 interface MainState {
   isConnected: boolean
   solBalance: number
   squads: Squad[]
+  matches: Match[]
 }
 
 const initialState: MainState = {
   isConnected: false,
   solBalance: 0,
-  squads: []
+  squads: [],
+  matches: []
 }
 
 export const mainSlice = createSlice({
@@ -25,12 +28,15 @@ export const mainSlice = createSlice({
     },
     setSquads: (state, action: PayloadAction<SquadsPayloadObject>) => {
       state.squads = action.payload.squads
+    },
+    setMatches: (state, action: PayloadAction<MatchesPayloadObject>) => {
+      state.matches = action.payload.matches
     }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { setConnected, setAccountInfo, setSquads } = mainSlice.actions
+export const { setConnected, setAccountInfo, setSquads, setMatches } = mainSlice.actions
 
 type ConnectedPayloadObject = {
   isConnected: boolean 
@@ -42,6 +48,10 @@ type AccountInfoPayloadObject = {
 
 type SquadsPayloadObject = {
   squads: Squad[]
+}
+
+type MatchesPayloadObject = {
+  matches: Match[]
 }
 
 export default mainSlice.reducer

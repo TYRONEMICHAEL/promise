@@ -9,12 +9,6 @@ import { getPageTitle } from '../config'
 import LayoutApp from '../layouts/App'
 
 const WelcomePage = () => {
-  const wallet = useWallet()
-
-  useEffect(() => {
-    console.log(wallet.connected)
-  }, [wallet])
-
   return (
     <>
       <Head>

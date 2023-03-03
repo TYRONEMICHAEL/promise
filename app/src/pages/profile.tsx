@@ -14,9 +14,10 @@ import UserCardProfileNumber from '../components/UserCardProfileNumber'
 import LayoutApp from '../layouts/App'
 import { getWalletBalance } from '../services/account'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
-import { setAccountInfo, setSquads } from '../stores/mainSlice'
+import { setAccountInfo, setMatches, setSquads } from '../stores/mainSlice'
 import { getWalletPublicKey } from '../utils/wallet'
 import { getSquadsForWallet } from '../services/squads'
+import { getYourMatchesForWallet } from '../services/matches'
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch()
@@ -25,6 +26,7 @@ const ProfilePage = () => {
   const { connection } = useConnection()
   const [isLoadingSol, setIsLoadingSol] = useState(false)
   const [isLoadingSquads, setIsLoadingSquads] = useState(false)
+  const [isLoadingMacthes, setIsLoadingMatches] = useState(false)
 
   useEffect(() => {
     if (!wallet.publicKey) return
@@ -45,6 +47,15 @@ const ProfilePage = () => {
       })
       .finally(() => {
         setIsLoadingSquads(false)
+      })
+
+    setIsLoadingMatches(true)
+    getYourMatchesForWallet(connection, wallet)
+      .then((matches) => {
+        dispatch(setMatches({ matches }))
+      })
+      .finally(() => {
+        setIsLoadingMatches(false)
       })
   }, [dispatch, wallet, connection])
 
@@ -81,7 +92,10 @@ const ProfilePage = () => {
                   {!isLoadingSquads && (
                     <UserCardProfileNumber number={user.squads.length} label="Squads" />
                   )}
-                  <UserCardProfileNumber number={0} label="Matches" />
+                  {isLoadingMacthes && <LoadingIndicator />}
+                  {!isLoadingMacthes && (
+                    <UserCardProfileNumber number={user.matches.length} label="Matches" />
+                  )}
                 </BaseButtons>
               </div>
             </div>

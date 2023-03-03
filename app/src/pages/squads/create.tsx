@@ -1,34 +1,30 @@
 import {
-  mdiAccount,
   mdiAccountGroup,
   mdiBallotOutline,
-  mdiGithub,
-  mdiMail,
-  mdiPen,
-  mdiUpload,
+  mdiUpload
 } from '@mdi/js'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import { ReactElement, useState } from 'react'
-import LayoutApp from '../../layouts/App'
-import { getPageTitle } from '../../config'
+import BaseButton from '../../components/BaseButton'
+import BaseButtons from '../../components/BaseButtons'
+import BaseDivider from '../../components/BaseDivider'
+import CardBox from '../../components/CardBox'
+import FormCheckRadio from '../../components/FormCheckRadio'
+import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
+import FormField from '../../components/FormField'
+import FormFilePicker from '../../components/FormFilePicker'
+import { LoadingIndicator } from '../../components/LoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
-import CardBox from '../../components/CardBox'
-import { createSquadForWallet } from '../../services/squads'
-import FormField from '../../components/FormField'
-import BaseDivider from '../../components/BaseDivider'
-import BaseButtons from '../../components/BaseButtons'
-import BaseButton from '../../components/BaseButton'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { useRouter } from 'next/router'
-import { LoadingIndicator } from '../../components/LoadingIndicator'
-import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
-import FormCheckRadio from '../../components/FormCheckRadio'
-import FormFilePicker from '../../components/FormFilePicker'
+import { getPageTitle } from '../../config'
 import { SnackBarPushedMessage } from '../../interfaces'
-import { pushMessage } from '../../stores/snackBarSlice'
+import LayoutApp from '../../layouts/App'
+import { createSquadForWallet } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
+import { pushMessage } from '../../stores/snackBarSlice'
 
 const CreateSquad = () => {
   const dispatch = useAppDispatch()

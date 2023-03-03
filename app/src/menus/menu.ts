@@ -1,7 +1,7 @@
 import {
   mdiAccountCircle,
   mdiAccountGroup,
-  mdiGamepad,
+  mdiGamepadVariant,
   mdiGithub,
   mdiHome,
   mdiMonitor
@@ -32,7 +32,7 @@ const menu: MenuAsideItemPremium[] = [
   },
   {
     href: '/matches',
-    icon: mdiGamepad,
+    icon: mdiGamepadVariant,
     label: 'Matches'
   },
   {

@@ -1,10 +1,12 @@
-@import "tailwind/_base.css";
-@import "tailwind/_components.css";
-@import "tailwind/_utilities.css";
+@import 'tailwind/_base.css';
+@import 'tailwind/_components.css';
+@import 'tailwind/_utilities.css';
 
-@import "_checkbox-radio-switch.css";
-@import "_progress.css";
-@import "_scrollbars.css";
-@import "_table.css";
+@import '_checkbox-radio-switch.css';
+@import '_progress.css';
+@import '_scrollbars.css';
+@import '_table.css';
 
-@import "../../node_modules/@solana/wallet-adapter-react-ui/styles.css";
+@import '../../node_modules/@solana/wallet-adapter-react-ui/styles.css';
+
+@import 'react-datepicker/dist/react-datepicker.css';
