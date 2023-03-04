@@ -625,7 +625,7 @@ describe("promise", () => {
     }
   });
 
-  it.only("A promise can be completed by a promisor", async () => {
+  it("A promise can be completed by a promisor", async () => {
     const { connection } = getProvider();
     const networkAuthority = web3.Keypair.generate();
     const promisorOwner = web3.Keypair.generate();
@@ -820,5 +820,231 @@ describe("promise", () => {
 
     expect(promiseeAccountInfoAfter.lamports - promiseeAccountInfoBefore.lamports).to.equal(LAMPORTS_PER_SOL / 2);
     expect(promise.state["completed"]).to.not.be.undefined;
+  });
+
+  it("A promisee can is awared the SOL wager", async () => {
+    const { connection } = getProvider();
+    const networkAuthority = web3.Keypair.generate();
+    const promisorOwner = web3.Keypair.generate();
+    const promiseeOwnerA = web3.Keypair.generate();
+    const promiseeOwnerB = web3.Keypair.generate();
+
+    const a1 = await connection.requestAirdrop(
+      networkAuthority.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const a2 = await connection.requestAirdrop(
+      promisorOwner.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const a3 = await connection.requestAirdrop(
+      promiseeOwnerA.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const a4 = await connection.requestAirdrop(
+      promiseeOwnerB.publicKey,
+      LAMPORTS_PER_SOL
+    );
+
+    const latestBlockHash = await connection.getLatestBlockhash();
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a1,
+    });
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a2,
+    });
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a3,
+    });
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a4,
+    });
+
+    const [networkAccount, networkAccountBump] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promise_network"),
+        networkAuthority.publicKey.toBuffer(), 
+      ],
+      program.programId
+    );
+
+    const networkRuleset = new NetworkRuleset();
+    const networkSerialized = serialize(networkRuleset);
+
+    await program.methods
+      .initializeNetwork(networkSerialized, networkAccountBump)
+      .accounts({
+        promiseNetwork: networkAccount,
+        authority: networkAuthority.publicKey,
+      })
+      .signers([networkAuthority])
+      .rpc();
+
+    const [promisorAccount, promisorAccountBump] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promisor"),
+        networkAccount.toBuffer(),
+        promisorOwner.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    await program.methods
+      .initializePromisor(promisorAccountBump)
+      .accounts({
+        promisor: promisorAccount,
+        owner: promisorOwner.publicKey,
+        promiseNetwork: networkAccount,
+      })
+      .signers([promisorOwner])
+      .rpc();
+
+    const promisor = await program.account.promisor.fetch(
+      promisorAccount
+    );
+
+    const id = promisor.numPromises + 1;
+
+    const [promiseAccount, promiseAccountBump] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promise"),
+        networkAccount.toBuffer(),
+        promisorAccount.toBuffer(),
+        new BN(id).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
+    
+    const promiseeRuleset = new PromiseeRuleset(null, new SolWager(LAMPORTS_PER_SOL / 2)); 
+    const promiseeSerialized = serialize(promiseeRuleset);
+    const promisorRuleset = new PromisorRuleset()
+    const promisorSerialized = serialize(promisorRuleset);
+
+    await program.methods
+      .initializePromise(id, promisorSerialized, promiseeSerialized, promiseAccountBump)
+      .accounts({
+        promise: promiseAccount,
+        promisor: promisorAccount,
+        promiseNetwork: networkAccount,
+        promisorOwner: promisorOwner.publicKey,
+      })
+      .signers([promisorOwner])
+      .rpc();
+
+    await program.methods
+      .updatePromiseActive()
+      .accounts({
+        promise: promiseAccount,
+        promisor: promisorAccount,
+        promisorOwner: promisorOwner.publicKey,
+      })
+      .signers([promisorOwner])
+      .rpc();
+
+    const [promiseeAccountA, promiseeAccountBumpA] = await PublicKey.findProgramAddress(
+      [
+        utils.bytes.utf8.encode("promisee"),
+        promiseAccount.toBuffer(),
+        promiseeOwnerA.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    await program.methods
+      .updatePromiseAccept(promiseeAccountBumpA)
+      .accounts({
+        promisee: promiseeAccountA,
+        promiseeOwner: promiseeOwnerA.publicKey,
+        promise: promiseAccount,
+      })
+      .remainingAccounts([
+        {
+          pubkey: promiseeOwnerA.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
+      .signers([promiseeOwnerA])
+      .rpc();
+
+      const [promiseeAccountB, promiseeAccountBumpB] = await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode("promisee"),
+          promiseAccount.toBuffer(),
+          promiseeOwnerB.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+    await program.methods
+      .updatePromiseAccept(promiseeAccountBumpB)
+      .accounts({
+        promisee: promiseeAccountB,
+        promiseeOwner: promiseeOwnerB.publicKey,
+        promise: promiseAccount,
+      })
+      .remainingAccounts([
+        {
+          pubkey: promiseeOwnerB.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+        {
+          pubkey: SystemProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        }
+      ])
+      .signers([promiseeOwnerB])
+      .rpc();
+
+    let promiseeAccountInfoBefore = await connection.getAccountInfo(promiseeOwnerA.publicKey);
+    
+     await program.methods
+      .updatePromiseCompleted()
+      .accounts({
+        promisee: promiseeAccountA,
+        promisor: promisorAccount,
+        promisorOwner: promisorOwner.publicKey,
+        promise: promiseAccount,
+      })
+      .remainingAccounts([
+        {
+          pubkey: promiseeOwnerA.publicKey,
+          isWritable: true,
+          isSigner: false,
+        }
+      ])
+      .signers([promisorOwner])
+      .rpc();
+    
+    let promiseeAccountInfoAfter = await connection.getAccountInfo(promiseeOwnerA.publicKey);
+
+    const promise = await program.account.promise.fetch(
+      promiseAccount
+    );
+    
+    const amountAwarded = promise.numPromisees * LAMPORTS_PER_SOL / 2;
+    expect(promiseeAccountInfoAfter.lamports).to.equal(amountAwarded + promiseeAccountInfoBefore.lamports);
   });
 });

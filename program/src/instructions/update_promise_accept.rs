@@ -41,6 +41,16 @@ pub fn update_promise_accept<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromis
             return Err(PromiseError::DeserializationError.into());
         }
     };
+    
+    let promisee = &mut ctx.accounts.promisee;
+    promisee.bump = bump;
+    promisee.owner = ctx.accounts.promisee_owner.key();
+    promisee.promise = promise.key();
+    promisee.created_at = Clock::get()?.unix_timestamp;
+    promisee.updated_at = Clock::get()?.unix_timestamp;
+
+    promise.num_promisees += 1;
+    promise.updated_at = Clock::get()?.unix_timestamp;
 
     let conditions = rules.enabled_conditions();
 
@@ -49,7 +59,6 @@ pub fn update_promise_accept<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromis
         indices: BTreeMap::new(),
     };
 
-    let promisee = &mut ctx.accounts.promisee;
     for condition in &conditions {
         condition.validate(
             promisee,
@@ -68,13 +77,5 @@ pub fn update_promise_accept<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromis
         )?;
     }
 
-    promisee.bump = bump;
-    promisee.owner = ctx.accounts.promisee_owner.key();
-    promisee.promise = promise.key();
-    promisee.created_at = Clock::get()?.unix_timestamp;
-    promisee.updated_at = Clock::get()?.unix_timestamp;
-
-    promise.num_promisees += 1;
-    promise.updated_at = Clock::get()?.unix_timestamp;
     Ok(())
 }
