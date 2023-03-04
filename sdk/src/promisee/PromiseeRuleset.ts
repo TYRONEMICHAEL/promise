@@ -3,21 +3,22 @@ import { RulesetDate } from "../rules/RulsetDate";
 import { SolGate } from "../rules/SolGate";
 
 export class PromiseeRuleset {
-  @field({ type: option(SolGate) })
-  solWager: SolGate;
-
   @field({ type: option(RulesetDate) })
-  endDate: RulesetDate;
+  endDate?: RulesetDate;
 
-  public constructor(solWager?: SolGate) {
+  @field({ type: option(SolGate) })
+  solWager?: SolGate;
+
+  public constructor(endDate?: RulesetDate, solWager?: SolGate) {
+    this.endDate = endDate;
     this.solWager = solWager;
   }
 
   public static fromData(data: Uint8Array | Buffer): PromiseeRuleset {
-    return deserialize(data, PromiseeRuleset);
+    return deserialize(Buffer.from(data), PromiseeRuleset);
   }
 
   public toData(): Buffer {
-    return serialize(this) as Buffer;
+    return Buffer.from(serialize(this));
   }
 }

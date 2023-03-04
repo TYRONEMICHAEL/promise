@@ -1,19 +1,22 @@
+import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { PromiseSDK } from "../src/PromiseSDK";
 import { Network } from "../src/network/Network";
 import { NetworkRuleset } from "../src/network/NetworkRuleset";
-import { Promisor } from "../src/promisor/Promisor";
-import { RulesetDate } from "../src/rules/RulsetDate";
 import { PromiseProtocol } from "../src/promise/PromiseProtocol";
-import { PromisorState } from "../src/promisor/PromisorState";
-import { PromisorRuleset } from "../src/promisor/PromisorRuleset";
-import { SolGate } from "../src/rules/SolGate";
-import { PromiseeRuleset } from "../src/promisee/PromiseeRuleset";
 import { PromiseState } from "../src/promise/PromiseState";
+import { Promisee } from "../src/promisee/Promisee";
+import { PromiseeRuleset } from "../src/promisee/PromiseeRuleset";
+import { Promisor } from "../src/promisor/Promisor";
+import { PromisorRuleset } from "../src/promisor/PromisorRuleset";
+import { PromisorState } from "../src/promisor/PromisorState";
+import { RulesetDate } from "../src/rules/RulsetDate";
+import { SolGate } from "../src/rules/SolGate";
+import { exit } from "process";
 
 const spawn = require("child_process").spawn;
-const program = require("../../target/idl/promise.json");
+const program = require("../src/promise.json");
 
 describe("PromiseSDK", () => {
   let promise: PromiseSDK;
@@ -22,10 +25,14 @@ describe("PromiseSDK", () => {
   let lastNetwork: Network;
   let lastPromisor: Promisor;
   let lastPromise: PromiseProtocol;
+  let lastPromisee: Promisee;
 
   before(async () => {
-    promise = PromiseSDK.forLocal("/Users/justinguedes/.config/solana/id.json");
     authority = Keypair.generate();
+    promise = new PromiseSDK(
+      new Connection("http://127.0.0.1:8899"),
+      new NodeWallet(authority)
+    );
     await topUpAccount(authority);
   });
 
@@ -44,7 +51,7 @@ describe("PromiseSDK", () => {
           null
         );
 
-        const network = await promise.createNetwork(ruleset, authority);
+        const network = await promise.createNetwork(ruleset);
         lastNetwork = network;
 
         expect(network.createdBy).to.eql(authority.publicKey);
@@ -55,16 +62,12 @@ describe("PromiseSDK", () => {
 
       it("should update a network", async () => {
         const newRuleset = new NetworkRuleset(
-          RulesetDate.fromDate(new Date()),
+          RulesetDate.fromDate(new Date(1676325600)),
           null,
           null
         );
 
-        const network = await promise.updateNetwork(
-          lastNetwork,
-          newRuleset,
-          authority
-        );
+        const network = await promise.updateNetwork(lastNetwork, newRuleset);
         lastNetwork = network;
 
         expect(network.createdBy).to.eql(authority.publicKey);
@@ -92,7 +95,7 @@ describe("PromiseSDK", () => {
   describe("Promisors", () => {
     describe("Write", () => {
       it("should create a promisor", async () => {
-        const promisor = await promise.createPromisor(lastNetwork, authority);
+        const promisor = await promise.createPromisor(lastNetwork);
         lastPromisor = promisor;
 
         expect(promisor.network).to.eql(lastNetwork.address);
@@ -104,8 +107,7 @@ describe("PromiseSDK", () => {
       it("should update promisor state", async () => {
         const promisor = await promise.updatePromisor(
           lastPromisor,
-          PromisorState.inactive,
-          authority
+          PromisorState.inactive
         );
         lastPromisor = promisor;
 
@@ -117,8 +119,7 @@ describe("PromiseSDK", () => {
         // Reset for the other tests to pass
         lastPromisor = await promise.updatePromisor(
           lastPromisor,
-          PromisorState.active,
-          authority
+          PromisorState.active
         );
       });
     });
@@ -141,13 +142,12 @@ describe("PromiseSDK", () => {
   describe("Promise", () => {
     describe("Write", () => {
       it("should create a promise", async () => {
-        const promisorRuleset = new PromisorRuleset(new SolGate(1243));
-        const promiseeRuleset = new PromiseeRuleset(new SolGate(1123));
+        const promisorRuleset = new PromisorRuleset();
+        const promiseeRuleset = new PromiseeRuleset();
         const result = await promise.createPromise(
           lastPromisor,
           promisorRuleset,
-          promiseeRuleset,
-          authority
+          promiseeRuleset
         );
         lastPromise = result;
 
@@ -155,19 +155,18 @@ describe("PromiseSDK", () => {
         expect(result.network).to.be.eql(lastPromisor.network);
         expect(result.promisor).to.be.eql(lastPromisor.address);
         expect(result.state).to.be.eql(PromiseState.created);
-        expect(result.promisorRuleset.solReward).to.not.be.undefined;
-        expect(result.promiseeRuleset.solWager).to.not.be.undefined;
+        expect(result.promiseeRuleset.solWager).to.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
         expect(result.numberOfPromisees).to.be.eql(0);
       });
 
-      it("should update a promise", async () => {
-        const promisorRuleset = new PromisorRuleset(new SolGate(5555));
-        const promiseeRuleset = new PromiseeRuleset(null);
+      it("should update a promise rule", async () => {
+        const promisorRuleset = new PromisorRuleset(new SolGate(5));
+        const promiseeRuleset = lastPromise.promiseeRuleset;
         const result = await promise.updatePromise(
           lastPromise,
           promisorRuleset,
-          promiseeRuleset,
-          authority
+          promiseeRuleset
         );
         lastPromise = result;
 
@@ -176,23 +175,62 @@ describe("PromiseSDK", () => {
         expect(result.promisor).to.be.eql(lastPromisor.address);
         expect(result.state).to.be.eql(PromiseState.created);
         expect(result.promisorRuleset.solReward).to.not.be.undefined;
-        expect(result.promiseeRuleset.solWager).to.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
         expect(result.numberOfPromisees).to.be.eql(0);
+      });
+
+      it("should activate a promise", async () => {
+        const result = await promise.activatePromise(lastPromise);
+        lastPromise = result;
+
+        expect(result.id).to.be.eql(1);
+        expect(result.network).to.be.eql(lastPromisor.network);
+        expect(result.promisor).to.be.eql(lastPromisor.address);
+        expect(result.state).to.be.eql(PromiseState.active);
+        expect(result.promisorRuleset.solReward).to.not.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
+        expect(result.numberOfPromisees).to.be.eql(0);
+      });
+
+      it("should accept a promise", async () => {
+        const accountBalanceBefore = await getBalance(authority);
+        const result = await promise.acceptPromise(lastPromise);
+        lastPromisee = result;
+        lastPromise = await promise.getPromise(lastPromise.address);
+        const accountBalanceAfter = await getBalance(authority);
+
+        expect(result.promise).to.be.eql(lastPromise.address);
+        expect(result.owner).to.be.eql(authority.publicKey);
+        expect(lastPromise.numberOfPromisees).to.be.eql(1);
+        expect(accountBalanceAfter).to.be.lessThan(accountBalanceBefore);
+      });
+
+      it("should complete a promise", async () => {
+        const result = await promise.completePromise(lastPromise, lastPromisee);
+        lastPromise = result;
+
+        expect(result.id).to.be.eql(1);
+        expect(result.network).to.be.eql(lastPromisor.network);
+        expect(result.promisor).to.be.eql(lastPromisor.address);
+        expect(result.state).to.be.eql(PromiseState.completed);
+        expect(result.promisorRuleset.solReward).to.not.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
+        expect(result.numberOfPromisees).to.be.eql(1);
       });
     });
 
     describe("Read", async () => {
-        it("should return list of promises", async () => {
-            const result = await promise.getPromises();
-    
-            expect(result.length).to.be.greaterThan(0);
-          });
-    
-          it("should return a specific promise", async () => {
-            const result = await promise.getPromise(lastPromise.address);
-    
-            expect(result).to.eql(lastPromise);
-          });
+      it("should return list of promises", async () => {
+        const result = await promise.getPromises();
+
+        expect(result.length).to.be.greaterThan(0);
+      });
+
+      it("should return a specific promise", async () => {
+        const result = await promise.getPromise(lastPromise.address);
+
+        expect(result).to.eql(lastPromise);
+      });
     });
   });
 });
@@ -211,4 +249,10 @@ async function topUpAccount(authority: Keypair) {
     lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
     signature: airdropSignature,
   });
+}
+
+async function getBalance(authority: Keypair) {
+  const connection = new Connection("http://127.0.0.1:8899");
+  const accountInfo = await connection.getAccountInfo(authority.publicKey);
+  return accountInfo.lamports;
 }
