@@ -1,4 +1,4 @@
-use anchor_lang::solana_program::{system_instruction, program::invoke};
+use anchor_lang::solana_program::{system_instruction, program::invoke, system_program};
 
 use crate::{errors::PromiseError, utils::{assert_keys_equal, try_get_account_info}};
 
@@ -25,8 +25,19 @@ impl Condition for SolWager {
     ) -> Result<()> {
         let index = evaluation_context.account_cursor;
         let promisee_owner = try_get_account_info::<AccountInfo>(&remaining_accounts, index)?;
+        let system_account = try_get_account_info::<AccountInfo>(&remaining_accounts, index + 1)?;
         assert_keys_equal(&promisee.owner.key(), &promisee_owner.key())?;
+        assert_keys_equal(&system_program::id(), &system_account.key())?;
 
+        evaluation_context
+            .indices
+            .insert("promisee_owner", index);
+
+        evaluation_context
+            .indices
+            .insert("system_program", index + 1);
+        
+        evaluation_context.indices.insert(&"system_program", index + 1);
         evaluation_context.account_cursor += 2;
 
         if promisee_owner.lamports() < self.lamports {
@@ -47,11 +58,10 @@ impl Condition for SolWager {
         remaining_accounts: &'c [AccountInfo<'info>],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
-        let index = evaluation_context.account_cursor;
-        let promisee_owner = &remaining_accounts[index];
-        let system_account = &remaining_accounts[index + 1];
-
-        evaluation_context.account_cursor += 2;
+        let promise_owner_i = evaluation_context.indices["promisee_owner"];
+        let system_program_i = evaluation_context.indices["system_program"];
+        let promisee_owner = try_get_account_info::<AccountInfo>(&remaining_accounts, promise_owner_i)?;
+        let system_account = try_get_account_info::<AccountInfo>(&remaining_accounts, system_program_i)?;
 
         assert_keys_equal(&promisee.owner.key(), &promisee_owner.key())?;
 
@@ -81,7 +91,7 @@ impl Condition for SolWager {
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         let index = evaluation_context.account_cursor;
-        let to_account = &remaining_accounts[index];
+        let to_account = try_get_account_info::<AccountInfo>(&remaining_accounts, index)?;
         let lamports = self.lamports * promise.num_promisees as u64;
         evaluation_context.account_cursor += 1;
 
