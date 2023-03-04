@@ -482,6 +482,18 @@
       }
     },
     {
+      "name": "SolWager",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lamports",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "SolReward",
       "type": {
         "kind": "struct",
@@ -547,6 +559,17 @@
             "type": {
               "option": {
                 "defined": "EndDate"
+              }
+            }
+          },
+          {
+            "name": "solWager",
+            "docs": [
+              "Allow for wagers to be created"
+            ],
+            "type": {
+              "option": {
+                "defined": "SolWager"
               }
             }
           }

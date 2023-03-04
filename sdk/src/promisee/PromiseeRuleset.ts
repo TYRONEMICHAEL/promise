@@ -6,8 +6,12 @@ export class PromiseeRuleset {
   @field({ type: option(RulesetDate) })
   endDate?: RulesetDate;
 
-  public constructor(endDate?: RulesetDate) {
+  @field({ type: option(SolGate) })
+  solWager?: SolGate;
+
+  public constructor(endDate?: RulesetDate, solWager?: SolGate) {
     this.endDate = endDate;
+    this.solWager = solWager;
   }
 
   public static fromData(data: Uint8Array | Buffer): PromiseeRuleset {

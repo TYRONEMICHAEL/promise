@@ -1,18 +1,19 @@
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-import { Connection, Keypair, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { PromiseSDK } from "../src/PromiseSDK";
 import { Network } from "../src/network/Network";
 import { NetworkRuleset } from "../src/network/NetworkRuleset";
 import { PromiseProtocol } from "../src/promise/PromiseProtocol";
 import { PromiseState } from "../src/promise/PromiseState";
+import { Promisee } from "../src/promisee/Promisee";
 import { PromiseeRuleset } from "../src/promisee/PromiseeRuleset";
 import { Promisor } from "../src/promisor/Promisor";
 import { PromisorRuleset } from "../src/promisor/PromisorRuleset";
 import { PromisorState } from "../src/promisor/PromisorState";
 import { RulesetDate } from "../src/rules/RulsetDate";
 import { SolGate } from "../src/rules/SolGate";
-import { Promisee } from "../src/promisee/Promisee";
+import { exit } from "process";
 
 const spawn = require("child_process").spawn;
 const program = require("../src/promise.json");
@@ -141,10 +142,8 @@ describe("PromiseSDK", () => {
   describe("Promise", () => {
     describe("Write", () => {
       it("should create a promise", async () => {
-        const promisorRuleset = new PromisorRuleset(new SolGate(12));
-        const promiseeRuleset = new PromiseeRuleset(
-          new RulesetDate(new Date().getTime())
-        );
+        const promisorRuleset = new PromisorRuleset();
+        const promiseeRuleset = new PromiseeRuleset();
         const result = await promise.createPromise(
           lastPromisor,
           promisorRuleset,
@@ -156,8 +155,8 @@ describe("PromiseSDK", () => {
         expect(result.network).to.be.eql(lastPromisor.network);
         expect(result.promisor).to.be.eql(lastPromisor.address);
         expect(result.state).to.be.eql(PromiseState.created);
-        expect(result.promisorRuleset.solReward).to.not.be.undefined;
-        expect(result.promiseeRuleset.endDate).to.not.be.undefined;
+        expect(result.promiseeRuleset.solWager).to.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
         expect(result.numberOfPromisees).to.be.eql(0);
       });
 
@@ -176,7 +175,7 @@ describe("PromiseSDK", () => {
         expect(result.promisor).to.be.eql(lastPromisor.address);
         expect(result.state).to.be.eql(PromiseState.created);
         expect(result.promisorRuleset.solReward).to.not.be.undefined;
-        expect(result.promiseeRuleset.endDate).to.not.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
         expect(result.numberOfPromisees).to.be.eql(0);
       });
 
@@ -189,7 +188,7 @@ describe("PromiseSDK", () => {
         expect(result.promisor).to.be.eql(lastPromisor.address);
         expect(result.state).to.be.eql(PromiseState.active);
         expect(result.promisorRuleset.solReward).to.not.be.undefined;
-        expect(result.promiseeRuleset.endDate).to.not.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
         expect(result.numberOfPromisees).to.be.eql(0);
       });
 
@@ -215,7 +214,7 @@ describe("PromiseSDK", () => {
         expect(result.promisor).to.be.eql(lastPromisor.address);
         expect(result.state).to.be.eql(PromiseState.completed);
         expect(result.promisorRuleset.solReward).to.not.be.undefined;
-        expect(result.promiseeRuleset.endDate).to.not.be.undefined;
+        expect(result.promiseeRuleset.endDate).to.be.undefined;
         expect(result.numberOfPromisees).to.be.eql(1);
       });
     });

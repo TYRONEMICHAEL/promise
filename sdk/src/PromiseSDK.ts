@@ -37,7 +37,6 @@ const programID = new PublicKey(idl.metadata.address);
 export class PromiseSDK {
   program: Program<PromiseAccount>;
   wallet: Wallet;
-  private rpcOptions: ConfirmOptions = { commitment: "finalized" };
 
   public constructor(connection: Connection, wallet: Wallet) {
     const provider = new AnchorProvider(
@@ -119,7 +118,8 @@ export class PromiseSDK {
       this.wallet.publicKey
     );
 
-    await method.rpc(this.rpcOptions);
+    const signature = await method.rpc();
+    await this.confirmTransaction(signature);
     const network = await this.getNetwork(networkAccount);
     if (network == null)
       throw new Error("Failed to create network for unknown reason.");
@@ -163,10 +163,13 @@ export class PromiseSDK {
     network: Network,
     ruleset: NetworkRuleset
   ): Promise<Network> {
-    await this._buildUpdateNetwork(network, ruleset, this.wallet.publicKey).rpc(
-      this.rpcOptions
-    );
+    const signature = await this._buildUpdateNetwork(
+      network,
+      ruleset,
+      this.wallet.publicKey
+    ).rpc();
 
+    await this.confirmTransaction(signature);
     const updatedNetwork = await this.getNetwork(network.address);
     if (updatedNetwork == null)
       throw new Error("Failed to update network for unknown reason.");
@@ -236,7 +239,8 @@ export class PromiseSDK {
       this.wallet.publicKey
     );
 
-    await method.rpc(this.rpcOptions);
+    const signature = await method.rpc();
+    await this.confirmTransaction(signature);
     const promisor = await this.getPromisor(promisorAccount);
     if (promisor == null)
       throw new Error("Failed to create promisor for unknown reason.");
@@ -276,10 +280,13 @@ export class PromiseSDK {
     promisor: Promisor,
     state: PromisorState
   ): Promise<Promisor> {
-    await this._buildUpdatePromisor(promisor, state, this.wallet.publicKey).rpc(
-      this.rpcOptions
-    );
+    const signature = await this._buildUpdatePromisor(
+      promisor,
+      state,
+      this.wallet.publicKey
+    ).rpc();
 
+    await this.confirmTransaction(signature);
     const updatePromisor = await this.getPromisor(promisor.address);
     if (updatePromisor == null)
       throw new Error("Failed to update promisor for unknown reason.");
@@ -365,7 +372,8 @@ export class PromiseSDK {
       this.wallet.publicKey
     );
 
-    await method.rpc(this.rpcOptions);
+    const signature = await method.rpc();
+    await this.confirmTransaction(signature);
     const promise = await this.getPromise(promiseAccount);
     if (promise == null)
       throw new Error("Failed to create promise for unknown reason.");
@@ -428,13 +436,14 @@ export class PromiseSDK {
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset
   ): Promise<PromiseProtocol> {
-    await this._buildUpdatePromise(
+    const signature = await this._buildUpdatePromise(
       promise,
       promisorRuleset,
       promiseeRuleset,
       this.wallet.publicKey
-    ).rpc(this.rpcOptions);
+    ).rpc();
 
+    await this.confirmTransaction(signature);
     const updatedPromise = await this.getPromise(promise.address);
     if (updatedPromise == null)
       throw new Error("Failed to update promise for unknown reason.");
@@ -484,10 +493,12 @@ export class PromiseSDK {
   public async activatePromise(
     promise: PromiseProtocol
   ): Promise<PromiseProtocol> {
-    await this._buildActivatePromise(promise, this.wallet.publicKey).rpc(
-      this.rpcOptions
-    );
+    const signature = await this._buildActivatePromise(
+      promise,
+      this.wallet.publicKey
+    ).rpc();
 
+    await this.confirmTransaction(signature);
     const activatedPromise = await this.getPromise(promise.address);
     if (activatedPromise == null)
       throw new Error("Failed to activate promise for unknown reason.");
@@ -532,8 +543,9 @@ export class PromiseSDK {
       promise,
       this.wallet.publicKey
     );
-    await method.rpc(this.rpcOptions);
 
+    const signature = await method.rpc();
+    await this.confirmTransaction(signature);
     const promisee = await this.getPromisee(promiseeAccount);
     if (promisee == null)
       throw new Error("Failed to accept promise for unknown reason.");
@@ -559,11 +571,20 @@ export class PromiseSDK {
     );
 
     return [
-      this.program.methods.updatePromiseAccept(promiseeBump).accounts({
-        promisee: promiseeAccount,
-        promiseeOwner: owner,
-        promise: promise.address,
-      }),
+      this.program.methods
+        .updatePromiseAccept(promiseeBump)
+        .accounts({
+          promisee: promiseeAccount,
+          promiseeOwner: owner,
+          promise: promise.address,
+        })
+        .remainingAccounts([
+          {
+            pubkey: owner,
+            isSigner: true,
+            isWritable: true,
+          },
+        ]),
       promiseeAccount,
     ];
   }
@@ -572,12 +593,13 @@ export class PromiseSDK {
     promise: PromiseProtocol,
     promisee: Promisee
   ): Promise<PromiseProtocol> {
-    await this._buildCompletePromise(
+    const signature = await this._buildCompletePromise(
       promise,
       promisee,
       this.wallet.publicKey
-    ).rpc(this.rpcOptions);
+    ).rpc();
 
+    await this.confirmTransaction(signature);
     const completedPromise = await this.getPromise(promise.address);
     if (completedPromise == null)
       throw new Error("Failed to complete promise for unknown reason.");
