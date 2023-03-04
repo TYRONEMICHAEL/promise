@@ -11,13 +11,13 @@ import SectionBannerProfile from '../components/SectionBannerProfile'
 import SectionMain from '../components/SectionMain'
 import SectionTitleLineWithButton from '../components/SectionTitleLineWithButton'
 import UserCardProfileNumber from '../components/UserCardProfileNumber'
+import { useMatches } from '../hooks/matches'
+import { useSquads } from '../hooks/squads'
 import LayoutApp from '../layouts/App'
 import { getWalletBalance } from '../services/account'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
-import { setAccountInfo, setMatches, setSquads } from '../stores/mainSlice'
+import { setAccountInfo } from '../stores/mainSlice'
 import { getWalletPublicKey } from '../utils/wallet'
-import { getSquadsForWallet } from '../services/squads'
-import { getYourMatchesForWallet } from '../services/matches'
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch()
@@ -25,8 +25,8 @@ const ProfilePage = () => {
   const wallet = useWallet()
   const { connection } = useConnection()
   const [isLoadingSol, setIsLoadingSol] = useState(false)
-  const [isLoadingSquads, setIsLoadingSquads] = useState(false)
-  const [isLoadingMacthes, setIsLoadingMatches] = useState(false)
+  const [squads, isLoadingSquads] = useSquads()
+  const [matches, isLoadingMatches] = useMatches({ onlyYourMatches: true })
 
   useEffect(() => {
     if (!wallet.publicKey) return
@@ -38,24 +38,6 @@ const ProfilePage = () => {
       })
       .finally(() => {
         setIsLoadingSol(false)
-      })
-
-    setIsLoadingSquads(true)
-    getSquadsForWallet(connection, wallet)
-      .then((squads) => {
-        dispatch(setSquads({ squads }))
-      })
-      .finally(() => {
-        setIsLoadingSquads(false)
-      })
-
-    setIsLoadingMatches(true)
-    getYourMatchesForWallet(connection, wallet)
-      .then((matches) => {
-        dispatch(setMatches({ matches }))
-      })
-      .finally(() => {
-        setIsLoadingMatches(false)
       })
   }, [dispatch, wallet, connection])
 
@@ -90,11 +72,11 @@ const ProfilePage = () => {
                   )}
                   {isLoadingSquads && <LoadingIndicator />}
                   {!isLoadingSquads && (
-                    <UserCardProfileNumber number={user.squads.length} label="Squads" />
+                    <UserCardProfileNumber number={squads.length} label="Squads" />
                   )}
-                  {isLoadingMacthes && <LoadingIndicator />}
-                  {!isLoadingMacthes && (
-                    <UserCardProfileNumber number={user.matches.length} label="Matches" />
+                  {isLoadingMatches && <LoadingIndicator />}
+                  {!isLoadingMatches && (
+                    <UserCardProfileNumber number={matches.length} label="Matches" />
                   )}
                 </BaseButtons>
               </div>

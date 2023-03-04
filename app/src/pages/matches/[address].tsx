@@ -1,4 +1,4 @@
-import { mdiBallotOutline, mdiCash, mdiTicket } from '@mdi/js'
+import { mdiBallotOutline, mdiTicket } from '@mdi/js'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
@@ -13,20 +13,16 @@ import { LoadingIndicator } from '../../components/LoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
+import { useSquads } from '../../hooks/squads'
 import { SnackBarPushedMessage } from '../../interfaces'
 import LayoutApp from '../../layouts/App'
 import {
-  Match,
   acceptMatchForSquad,
   completeMatchForSquad,
-  createMatchForWallet,
   getSquadsForMatch,
 } from '../../services/matches'
 import { useAppDispatch, useAppSelector } from '../../stores/hooks'
-import { pushMessage } from '../../stores/snackBarSlice'
-import { DatePickerField } from '../../components/DatePickerField'
-import { getSquadsForWallet } from '../../services/squads'
-import { setSquads } from '../../stores/mainSlice'
+import { useMatches } from '../../hooks/matches'
 
 const MatchDetails = () => {
   const dispatch = useAppDispatch()
@@ -36,30 +32,31 @@ const MatchDetails = () => {
   const user = useAppSelector((state) => state.main)
   const [isAccepting, setIsAccepting] = useState(false)
   const [squadsInMatch, setSquadsInMatch] = useState([])
-
-  // TODO load squads incase it hasn't been loaded
+  const [squads] = useSquads()
+  // TODO add match filter
+  const [matches, isLoadingMatches] = useMatches(false)
 
   const { address } = router.query
-  const match = user.matches.find((match) => match.address == address)
-  if (!match) {
-    router.back()
-  }
+  const match = matches.find((match) => match.address == address)
 
   useEffect(() => {
-    setIsAccepting(true)
-    getSquadsForMatch(connection, wallet, match)
-      .then((squads) => setSquadsInMatch(squads))
-      .finally(() => {
-        setIsAccepting(false)
-      })
+    if (match) {
+      setIsAccepting(true)
+      getSquadsForMatch(connection, wallet, match)
+        .then((squads) => setSquadsInMatch(squads))
+        .finally(() => {
+          setIsAccepting(false)
+        })
+    }
   }, [connection, wallet, match, setIsAccepting, setSquadsInMatch])
 
   const acceptMatch = async ({ squad }) => {
-    const s = user.squads.find((sq) => sq.address == squad)
     console.log(squad)
-    console.log(user.squads)
+    console.log(squads)
+    const selected = squads.find((sq) => sq.address == squad)
+    console.log(selected)
     setIsAccepting(true)
-    acceptMatchForSquad(connection, wallet, match, s)
+    acceptMatchForSquad(connection, wallet, match, squads[0])
       .then((status) => {
         console.log(status)
       })
@@ -88,67 +85,75 @@ const MatchDetails = () => {
   return (
     <>
       <Head>
-        <title>{getPageTitle(`Match ${match.id}`)}</title>
+        <title>{getPageTitle(`Match ${match?.address}`)}</title>
       </Head>
 
       <SectionMain>
         <SectionTitleLineWithButton
           icon={mdiBallotOutline}
-          title={`Match ${match.id}`}
+          title={`Match ${match?.address}`}
           main
           excludeButton
         />
-
-        {squadsInMatch.map((squad) => {
-          return (
-            <>
-              <h3 key={squad.address}>{squad.address}</h3>
-
-              <BaseButton
-                onClick={() => completeMatch(squad)}
-                label="Complete"
-                icon={mdiTicket}
-                color="success"
-                roundedFull
-                small
-              />
-            </>
-          )
-        })}
-
-        <CardBox>
-          <Formik
-            initialValues={{
-              squad: user.squads.length > 0 ? user.squads[0] : '',
-            }}
-            onSubmit={(values) => acceptMatch(values)}
-          >
-            <Form>
-              <FormField label="Squads" labelFor="squad">
-                <Field name="squad" id="squad" component="select">
-                  {user.squads.map((squad) => {
-                    return (
-                      <option key={squad.address} value={squad.address}>
-                        {squad.name}
-                      </option>
-                    )
-                  })}
-                </Field>
-              </FormField>
-
-              <BaseDivider />
-
-              {isAccepting && <LoadingIndicator />}
-              {!isAccepting && (
+        {isLoadingMatches && <LoadingIndicator />}
+        {!isLoadingMatches && match && (
+          <>
+            {squadsInMatch.map((squad) => {
+              return (
                 <>
-                  <BaseButtons>
-                    <BaseButton type="submit" color="info" label="Accept" />
-                  </BaseButtons>
+                  <h3 key={squad.address}>{squad.address}</h3>
+
+                  <BaseButton
+                    onClick={() => completeMatch(squad)}
+                    label="Complete"
+                    icon={mdiTicket}
+                    color="success"
+                    roundedFull
+                    small
+                  />
                 </>
-              )}
-            </Form>
-          </Formik>
-        </CardBox>
+              )
+            })}
+
+            <CardBox>
+              <Formik
+                initialValues={{
+                  squad: '',
+                }}
+                onSubmit={(values) => acceptMatch(values)}
+              >
+                <Form>
+                  <FormField label="Squads" labelFor="squad">
+                    <Field name="squad" id="squad" component="select">
+                      {squads
+                        .filter(
+                          (squad) => !squadsInMatch.map((s) => s.address).includes(squad.address)
+                        )
+                        .map((squad) => {
+                          return (
+                            <option key={squad.address} value={squad.address}>
+                              {squad.address}
+                            </option>
+                          )
+                        })}
+                    </Field>
+                  </FormField>
+
+                  <BaseDivider />
+
+                  {isAccepting && <LoadingIndicator />}
+                  {!isAccepting && (
+                    <>
+                      <BaseButtons>
+                        <BaseButton type="submit" color="info" label="Accept" />
+                      </BaseButtons>
+                    </>
+                  )}
+                </Form>
+              </Formik>
+            </CardBox>
+          </>
+        )}
       </SectionMain>
     </>
   )

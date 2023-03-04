@@ -1,104 +1,80 @@
-import { AnchorProvider, Program } from '@project-serum/anchor'
-import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet'
 import { WalletContextState } from '@solana/wallet-adapter-react'
 import { Connection, Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
-import Squads, { getAuthorityPDA, getMsPDA } from '@sqds/sdk'
-import { IDL, SquadsMpl } from '@sqds/sdk/lib/target/types/squads_mpl'
+import { getMsPDA } from '@sqds/sdk'
+import { squadsInstance, squadsProgram } from '../env'
+import {
+  Squad,
+  SquadExecutionStatus,
+  SquadStatus,
+  SquadTransaction,
+  maxNumberOfMembersPerSquad,
+  toSquadExecutionStatus,
+} from '../interfaces/squads'
 
-const maxNumberOfKeysPerSquad = 2
-
-export type Squad = {
-  name: string
-  // description: string
-  // icon: string
-  address: string
-  createKey: string
-  members: string[]
-  numberOfApprovers: number
-}
-
-export enum SquadExecutionStatus {
-  draft,
-  waiting,
-  ready,
-  executed,
-  rejected,
-  cancelled,
-}
-
-const toSquadExecutionStatus = (state) => {
-  if (state['executeReady'] != null) {
-    return SquadExecutionStatus.ready
-  } else if (state['executed'] != null) {
-    return SquadExecutionStatus.executed
-  } else if (state['active']) {
-    return SquadExecutionStatus.waiting
-  } else if (state['draft']) {
-    return SquadExecutionStatus.draft
-  } else if (state['cancelled']) {
-    return SquadExecutionStatus.cancelled
-  } else {
-    return SquadExecutionStatus.rejected
-  }
-}
-
-const createSquadsInstance = (wallet: WalletContextState) => {
-  return Squads.localnet(wallet, {
-    multisigProgramId: new PublicKey('3RVSoJHxueZnjyzdre6gW6ciNZKTv7hnhLL39eary5kB'),
-    programManagerProgramId: new PublicKey('7bEk3wSumpeE5gDNx4b5pqvfn28nRWn6XfFWzVGiaDEP'),
-  })
-}
-
-const getSquadsProgram = (connection: Connection, wallet: WalletContextState) => {
-  const idl = IDL
-  return new Program<SquadsMpl>(
-    idl,
-    new PublicKey('3RVSoJHxueZnjyzdre6gW6ciNZKTv7hnhLL39eary5kB'),
-    new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions())
-  )
-}
-
-export const getSquadsForWallet: (
+export const getSquads: (
   connection: Connection,
   wallet: WalletContextState
 ) => Promise<Squad[]> = async (connection: Connection, wallet: WalletContextState) => {
-  const squadsProgram = getSquadsProgram(connection, wallet)
-  const squadsPromises: Promise<any[]>[] = Array.from(Array(maxNumberOfKeysPerSquad).keys()).reduce(
-    (result, current) => {
-      return result.concat(
-        squadsProgram.account.ms.all([
-          {
-            memcmp: {
-              offset:
-                8 + // Anchor discriminator
-                2 + // threshold value
-                2 + // authority index
-                4 + // transaction index
-                4 + // processed internal transaction index
-                1 + // PDA bump
-                32 + // creator
-                1 + // allow external execute
-                4 + // for vec length
-                32 * current, // position of key
-              bytes: wallet.publicKey.toBase58(),
-            },
+  const arrayOfMembers = Array.from(Array(maxNumberOfMembersPerSquad).keys())
+  const program = squadsProgram(connection, wallet)
+  const walletAddress = wallet.publicKey.toBase58()
+  const squadsPromises = arrayOfMembers.reduce((result, current) => {
+    return result.concat(
+      program.account.ms.all([
+        {
+          memcmp: {
+            offset:
+              8 + // Anchor discriminator
+              2 + // threshold value
+              2 + // authority index
+              4 + // transaction index
+              4 + // processed internal transaction index
+              1 + // PDA bump
+              32 + // creator
+              1 + // allow external execute
+              4 + // for vec length
+              32 * current, // position of key
+            bytes: walletAddress,
           },
-        ])
-      )
-    },
-    []
-  )
+        },
+      ])
+    )
+  }, [])
 
   const squads = (await Promise.all(squadsPromises)).flat()
-  return squads.map((squad, index) => {
-    return {
-      name: `Squad ${index}`,
-      address: squad.publicKey.toBase58(),
-      createKey: squad.account.createKey.toBase58(),
-      members: squad.account.keys.map((key) => key.toBase58()),
-      numberOfApprovers: squad.account.threshold,
+  return await Promise.all(
+    squads.map((squad) => {
+      return getSquad(connection, wallet, squad)
+    })
+  )
+}
+
+const getSquad: (
+  connection: Connection,
+  wallet: WalletContextState,
+  squad: any
+) => Promise<Squad> = async (connection: Connection, wallet: WalletContextState, squad: any) => {
+  const address = squad.publicKey.toBase58()
+  const members = squad.account.keys.map((key) => key.toBase58())
+  const transaction = await getTransactionForSquad(connection, wallet, address, SquadExecutionStatus.waiting)
+  let status = SquadStatus.active
+  if (transaction) {
+    const user = wallet.publicKey.toBase58()
+    const approved = transaction.approved.map(approver => approver.toBase58())
+    if (approved.includes(user)) {
+      status = SquadStatus.waitingApproval
+    } else {
+      status = SquadStatus.requiresApproval
     }
-  })
+  }
+
+  return {
+    address,
+    members,
+    createKey: squad.account.createKey.toBase58(),
+    numberOfApprovers: squad.account.threshold,
+    status,
+  }
 }
 
 export const getSquadForOwner: (
@@ -110,88 +86,102 @@ export const getSquadForOwner: (
   wallet: WalletContextState,
   owner: PublicKey
 ) => {
-  const squads = await getSquadsForWallet(connection, wallet)
+  const squads = await getSquads(connection, wallet)
   return squads.find((squad) => {
     const authority = getAuthorityKeyForSquad(wallet, squad)
     return authority.toBase58() == owner.toBase58()
   })
 }
 
-export const createSquadForWallet: (
+export const getAuthorityKeyForSquad: (wallet: WalletContextState, squad: Squad) => PublicKey = (
   wallet: WalletContextState,
-  name: string,
-  description: string,
-  threshold: number,
-  includeSelfAsMember: boolean,
-  icon?: string,
-  members?: string[]
-) => Promise<Squad> = async (
-  wallet: WalletContextState,
-  name: string,
-  description: string,
-  threshold: number,
-  includeSelfAsMember: boolean,
-  icon?: string,
-  members?: string[]
+  squad: Squad
 ) => {
-  const squads = createSquadsInstance(wallet)
+  const squads = squadsInstance(wallet)
+  return squads.getAuthorityPDA(new PublicKey(squad.address), 1)
+}
+
+export const createSquad: (
+  wallet: WalletContextState,
+  partner: string,
+  threshold: number
+) => Promise<Squad> = async (wallet: WalletContextState, partner: string, threshold: number) => {
+  const squads = squadsInstance(wallet)
   const createKey = Keypair.generate()
-  const membersPubKeys =
-    members?.filter((member) => member.length > 0).map((member) => new PublicKey(member)) ?? []
-  const multiSig = await squads.createMultisig(
-    threshold,
-    createKey.publicKey,
-    includeSelfAsMember ? membersPubKeys.concat(wallet.publicKey) : membersPubKeys,
-    name,
-    description,
-    icon
-  )
+  const partnerPublicKey = new PublicKey(partner)
+  const multiSig = await squads.createMultisig(threshold, createKey.publicKey, [
+    wallet.publicKey,
+    partnerPublicKey,
+  ])
 
   return {
-    name: 'New Squad',
     address: multiSig.publicKey.toBase58(),
     createKey: multiSig.createKey.toBase58(),
     members: multiSig.keys.map((key) => key.toBase58()),
     numberOfApprovers: multiSig.threshold,
+    status: SquadStatus.active,
   }
 }
 
-export const waitingForApprovalForSquad: (
+export const isSquadWaitingApproval: (
   connection: Connection,
   wallet: WalletContextState,
-  squad: Squad
+  squadAddress: string
 ) => Promise<boolean> = async (
   connection: Connection,
   wallet: WalletContextState,
-  squad: Squad
+  squadAddress: string
 ) => {
-  if (!squad.members.includes(wallet.publicKey.toBase58())) {
+  if (!wallet) {
     return false
   }
 
-  return await getWaitingTransactionForSquad(connection, wallet, squad) !== undefined
+  const transaction = await getTransactionForSquad(
+    connection,
+    wallet,
+    squadAddress,
+    SquadExecutionStatus.waiting
+  )
+  return transaction !== undefined
 }
 
-const getWaitingTransactionForSquad: (
+const getTransactionForSquad: (
   connection: Connection,
   wallet: WalletContextState,
-  squad: Squad
-) => Promise<any> = async (connection: Connection, wallet: WalletContextState, squad: Squad) => {
-  const squadsProgram = getSquadsProgram(connection, wallet)
-  const transactions = await squadsProgram.account.msTransaction.all([
+  squadAddress: string,
+  status: SquadExecutionStatus
+) => Promise<SquadTransaction> = async (
+  connection: Connection,
+  wallet: WalletContextState,
+  squadAddress: string,
+  status: SquadExecutionStatus
+) => {
+  const program = squadsProgram(connection, wallet)
+  const transactions = await program.account.msTransaction.all([
     {
       memcmp: {
-        offset: 8 + 32, // Anchor discriminator
-        bytes: squad.address,
+        offset:
+          8 + // Anchor discriminator
+          32, // Creator
+        bytes: squadAddress,
       },
     },
   ])
 
-  return transactions.find((transaction) => {
-    const status = toSquadExecutionStatus(transaction.account.status)
-    const approved = transaction.account.approved.map((approver) => approver.toBase58())
-    return status == SquadExecutionStatus.waiting && !approved.includes(wallet.publicKey.toBase58())
+  const transaction = transactions.find((transaction) => {
+    const transactionStatus = toSquadExecutionStatus(transaction.account.status)
+    return transactionStatus == status
   })
+
+  if (!transaction) {
+    return undefined
+  }
+
+  return {
+    publicKey: transaction.publicKey,
+    status: transaction.account.status,
+    approved: transaction.account.approved
+  }
 }
 
 export const approveTransactionForSquad: (
@@ -203,14 +193,17 @@ export const approveTransactionForSquad: (
   wallet: WalletContextState,
   squad: Squad
 ) => {
-  const squads = createSquadsInstance(wallet)
-  let transaction = await getWaitingTransactionForSquad(connection, wallet, squad)
+  const squads = squadsInstance(wallet)
+  let transaction = await getTransactionForSquad(
+    connection,
+    wallet,
+    squad.address,
+    SquadExecutionStatus.waiting
+  )
   await squads.approveTransaction(transaction.publicKey)
 
   transaction = await squads.getTransaction(transaction.publicKey)
-  console.log('Transaction: ', transaction)
   const status = toSquadExecutionStatus(transaction.status)
-  console.log('Current Status: ', status)
   if (status == SquadExecutionStatus.ready) {
     await squads.executeTransaction(transaction.publicKey)
     transaction = await squads.getTransaction(transaction.publicKey)
@@ -220,15 +213,7 @@ export const approveTransactionForSquad: (
   return status
 }
 
-export const getAuthorityKeyForSquad: (wallet: WalletContextState, squad: Squad) => PublicKey = (
-  wallet: WalletContextState,
-  squad: Squad
-) => {
-  const squads = createSquadsInstance(wallet)
-  return squads.getAuthorityPDA(new PublicKey(squad.address), 1)
-}
-
-export const executeInstruction: (
+export const executeInstructionForSquad: (
   wallet: WalletContextState,
   squad: Squad,
   instruction: TransactionInstruction
@@ -237,25 +222,18 @@ export const executeInstruction: (
   squad: Squad,
   instruction: TransactionInstruction
 ) => {
-  const squads = createSquadsInstance(wallet)
+  const squads = squadsInstance(wallet)
   const [msPDA] = getMsPDA(new PublicKey(squad.createKey), squads.multisigProgramId)
 
-  console.log('MSPDA: ', msPDA)
   let transaction = await squads.createTransaction(msPDA, 1)
-  console.log('Created Transaction: ', transaction)
   await squads.addInstruction(transaction.publicKey, instruction)
-  console.log('Added Instruction')
   await squads.activateTransaction(transaction.publicKey)
-  console.log('Activated Transaction')
   if (squad.members.includes(wallet.publicKey.toBase58())) {
     await squads.approveTransaction(transaction.publicKey)
-    console.log('Approved Transaction')
   }
 
   transaction = await squads.getTransaction(transaction.publicKey)
-  console.log('Transaction: ', transaction)
   const status = toSquadExecutionStatus(transaction.status)
-  console.log('Current Status: ', status)
   if (status == SquadExecutionStatus.ready) {
     await squads.executeTransaction(transaction.publicKey)
     transaction = await squads.getTransaction(transaction.publicKey)

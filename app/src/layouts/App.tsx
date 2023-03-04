@@ -12,6 +12,7 @@ import NavBar from '../components/navbar/NavBar'
 import menu from '../menus/menu'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
 import { asideLgToggle, asideMobileToggle, setIsAsideMobileExpanded } from '../stores/layoutSlice'
+import { localStorageDarkModeKey } from '../config'
 
 type Props = {
   requiresWallet?: boolean

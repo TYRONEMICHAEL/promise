@@ -36,7 +36,6 @@ export default function NavBar({ className = '', children }: Props) {
             isMenuNavBarActive ? 'block' : 'hidden'
           } max-h-screen-menu overflow-y-auto lg:overflow-visible absolute w-screen top-14 left-0 bg-gray-50 shadow-lg lg:w-auto lg:flex lg:static lg:shadow-none dark:bg-slate-800`}
         >
-          <StyleModeNavBarButton />
           <WalletNavBarButton />
         </div>
       </div>

@@ -1,10 +1,9 @@
 import {
   mdiAccountCircle,
-  mdiAccountGroup,
-  mdiGamepadVariant,
+  mdiAccountMultiple,
   mdiGithub,
   mdiHome,
-  mdiMonitor
+  mdiTableTennis
 } from '@mdi/js'
 import { githubUrl } from '../config'
 import type { MenuAsideItemPremium } from '../interfaces'
@@ -16,24 +15,19 @@ const menu: MenuAsideItemPremium[] = [
     label: 'Home',
   },
   {
-    href: '/dashboard',
-    icon: mdiMonitor,
-    label: 'Dashboard',
-  },
-  {
     href: '/profile',
     icon: mdiAccountCircle,
-    label: 'Profile'
+    label: 'Profile',
   },
   {
     href: '/squads',
-    icon: mdiAccountGroup,
-    label: 'Squads'
+    icon: mdiAccountMultiple,
+    label: 'Squads',
   },
   {
     href: '/matches',
-    icon: mdiGamepadVariant,
-    label: 'Matches'
+    icon: mdiTableTennis,
+    label: 'Matches',
   },
   {
     href: githubUrl,

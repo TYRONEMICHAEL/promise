@@ -1,19 +1,15 @@
-import {
-  mdiAccountGroup,
-  mdiBallotOutline,
-  mdiUpload
-} from '@mdi/js'
+import { mdiAccountGroup, mdiBallotOutline, mdiUpload, mdiWallet } from '@mdi/js'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { ReactElement, useState } from 'react'
+import * as Yup from 'yup'
 import BaseButton from '../../components/BaseButton'
 import BaseButtons from '../../components/BaseButtons'
 import BaseDivider from '../../components/BaseDivider'
 import CardBox from '../../components/CardBox'
-import FormCheckRadio from '../../components/FormCheckRadio'
-import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
 import FormField from '../../components/FormField'
 import FormFilePicker from '../../components/FormFilePicker'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
@@ -22,9 +18,11 @@ import SectionTitleLineWithButton from '../../components/SectionTitleLineWithBut
 import { getPageTitle } from '../../config'
 import { SnackBarPushedMessage } from '../../interfaces'
 import LayoutApp from '../../layouts/App'
-import { createSquadForWallet } from '../../services/squads'
+import { createSquad } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
+import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
+import FormCheckRadio from '../../components/FormCheckRadio'
 
 const CreateSquad = () => {
   const dispatch = useAppDispatch()
@@ -43,23 +41,16 @@ const CreateSquad = () => {
     }
   }
 
-  const createSquad = async ({ name, description, members, includeSelfAsMember, threshold }) => {
+  const createSquadAction = async ({ partner, requireBothApproval }) => {
+    const threshold = requireBothApproval ? 2 : 1
     setIsCreating(true)
-    createSquadForWallet(
-      wallet,
-      name,
-      description,
-      threshold,
-      includeSelfAsMember,
-      null,
-      members.split(/\s+/)
-    )
+    createSquad(wallet, partner, threshold)
       .then(() => {
-        const message = createSnackbarMessage(`Successfully created ${name}`, true)
+        const message = createSnackbarMessage(`Successfully created squad`, true)
         dispatch(pushMessage(message))
       })
       .catch(() => {
-        const message = createSnackbarMessage(`Failed to create ${name}`, false)
+        const message = createSnackbarMessage(`Failed to create squad`, false)
         dispatch(pushMessage(message))
       })
       .finally(() => {
@@ -68,6 +59,26 @@ const CreateSquad = () => {
       })
   }
 
+  const createInitialValues = {
+    partner: '',
+    requireBothApproval: true,
+  }
+
+  const createSchema = Yup.object().shape({
+    partner: Yup.string()
+      .test(
+        'is-public-key',
+        () => "Your partner's wallet address needs to be a valid wallet address",
+        (value) => {
+          try {
+            return new PublicKey(value) != null
+          } catch {
+            return false
+          }
+        }
+      ),
+  })
+
   return (
     <>
       <Head>
@@ -75,61 +86,45 @@ const CreateSquad = () => {
       </Head>
 
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiBallotOutline} title="Create" main excludeButton/>
+        <SectionTitleLineWithButton icon={mdiBallotOutline} title="Create" main excludeButton />
 
         <CardBox>
           <Formik
-            initialValues={{
-              name: '',
-              description: '',
-              members: '',
-              includeSelfAsMember: true,
-              threshold: 1,
-            }}
-            onSubmit={(values) => createSquad(values)}
+            initialValues={createInitialValues}
+            validationSchema={createSchema}
+            onSubmit={(values) => createSquadAction(values)}
           >
-            <Form>
-              <FormField label="Details" icons={[mdiAccountGroup]}>
-                <Field name="name" placeholder="Name" />
-              </FormField>
+            {({ errors, touched }) => (
+              <Form>
+                <FormField
+                  label="Partner"
+                  icons={[mdiWallet]}
+                  error={errors.partner && touched.partner ? errors.partner : null}
+                >
+                  <Field name="partner" placeholder="Address" />
+                </FormField>
 
-              <FormField hasTextareaHeight>
-                <Field name="description" as="textarea" placeholder="Description" />
-              </FormField>
+                <FormField>
+                  <FormCheckRadioGroup>
+                    <FormCheckRadio type="checkbox" label="Require you and your partner to approve matches?">
+                      <Field type="checkbox" name="requireBothApproval" />
+                    </FormCheckRadio>
+                  </FormCheckRadioGroup>
+                </FormField>
 
-              <FormField>
-                {/* TODO */}
-                <FormFilePicker label="Upload icon" color="info" icon={mdiUpload} />
-              </FormField>
+                <BaseDivider />
 
-              <BaseDivider />
-
-              <FormField label="Members" hasTextareaHeight>
-                <Field name="members" as="textarea" placeholder="List of members" />
-              </FormField>
-              <FormField help="Number of members required to approve">
-                <Field name="threshold" type="number" placeholder="Number of approvers" min="0" />
-              </FormField>
-              <FormField>
-                <FormCheckRadioGroup>
-                  <FormCheckRadio type="switch" label="Include self as member">
-                    <Field name="includeSelfAsMember" type="checkbox" />
-                  </FormCheckRadio>
-                </FormCheckRadioGroup>
-              </FormField>
-
-              <BaseDivider />
-
-              {isCreating && <LoadingIndicator />}
-              {!isCreating && (
-                <>
-                  <BaseButtons>
-                    <BaseButton type="submit" color="info" label="Submit" />
-                    <BaseButton type="reset" color="info" outline label="Reset" />
-                  </BaseButtons>
-                </>
-              )}
-            </Form>
+                {isCreating && <LoadingIndicator />}
+                {!isCreating && (
+                  <>
+                    <BaseButtons>
+                      <BaseButton type="submit" color="info" label="Create" />
+                      <BaseButton type="reset" color="info" outline label="Reset" />
+                    </BaseButtons>
+                  </>
+                )}
+              </Form>
+            )}
           </Formik>
         </CardBox>
       </SectionMain>

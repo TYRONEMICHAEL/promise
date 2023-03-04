@@ -18,7 +18,7 @@ import SectionTitleLineWithButton from '../../components/SectionTitleLineWithBut
 import { getPageTitle } from '../../config'
 import { SnackBarPushedMessage } from '../../interfaces'
 import LayoutApp from '../../layouts/App'
-import { createMatchForWallet } from '../../services/matches'
+import { createMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { DatePickerField } from '../../components/DatePickerField'
@@ -41,9 +41,9 @@ import { DatePickerField } from '../../components/DatePickerField'
       }
     }
   
-    const createMatch = async ({ wager, endDate }) => {
+    const createMatchAction = async ({ wager, endDate }) => {
       setIsCreating(true)
-      createMatchForWallet(
+      createMatch(
         connection,
         wallet,
         {
@@ -80,7 +80,7 @@ import { DatePickerField } from '../../components/DatePickerField'
                 wager: 0,
                 endDate: "2022/02/01"
               }}
-              onSubmit={(values) => createMatch(values)}
+              onSubmit={(values) => createMatchAction(values)}
             >
               <Form>
                 <FormField label="Details" icons={[mdiCash]}>

@@ -1,7 +1,6 @@
 import { mdiPencil } from '@mdi/js'
-import { useWallet } from '@solana/wallet-adapter-react'
 import Head from 'next/head'
-import { ReactElement, useEffect } from 'react'
+import { ReactElement } from 'react'
 import IconRounded from '../components/IconRounded'
 import SectionFullScreen from '../components/SectionFullScreen'
 import SectionTitle from '../components/SectionTitle'
