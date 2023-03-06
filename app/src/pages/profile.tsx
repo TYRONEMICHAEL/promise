@@ -26,7 +26,7 @@ const ProfilePage = () => {
   const { connection } = useConnection()
   const [isLoadingSol, setIsLoadingSol] = useState(false)
   const [squads, isLoadingSquads] = useSquads()
-  const [matches, isLoadingMatches] = useMatches({ onlyYourMatches: true })
+  const [matches, isLoadingMatches] = useMatches(true)
 
   useEffect(() => {
     if (!wallet.publicKey) return
