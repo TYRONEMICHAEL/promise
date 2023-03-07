@@ -10,6 +10,7 @@ import { SquadComponent } from '../../components/SquadComponent'
 import { getPageTitle } from '../../config'
 import { useSquads } from '../../hooks/squads'
 import LayoutApp from '../../layouts/App'
+import Link from 'next/link'
 
 const SquadsPage = () => {
   const [squads, isLoadingSquads] = useSquads()
@@ -30,7 +31,7 @@ const SquadsPage = () => {
             small
           />
         </SectionTitleLineWithButton>
-        
+
         {isLoadingSquads && <LoadingIndicator />}
         {!isLoadingSquads && squads.length <= 0 && (
           <CardBoxComponentEmpty message="You currently don't have/belong to any squads." />
@@ -38,7 +39,11 @@ const SquadsPage = () => {
         {!isLoadingSquads && squads.length > 0 && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 md:grid-cols-2 mb-6">
             {squads.map((squad, index) => {
-              return <SquadComponent key={index} squad={squad} />
+              return (
+                <Link key={index} href={`/squads/${squad.address}`}>
+                  <SquadComponent key={index} squad={squad} />
+                </Link>
+              )
             })}
           </div>
         )}

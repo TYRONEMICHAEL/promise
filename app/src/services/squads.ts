@@ -10,6 +10,7 @@ import {
   maxNumberOfMembersPerSquad,
   toSquadExecutionStatus,
 } from '../interfaces/squads'
+import { getMatchForTransaction } from './matches'
 
 export const getSquads: (
   connection: Connection,
@@ -56,15 +57,22 @@ const getSquad: (
 ) => Promise<Squad> = async (connection: Connection, wallet: WalletContextState, squad: any) => {
   const address = squad.publicKey.toBase58()
   const members = squad.account.keys.map((key) => key.toBase58())
-  const transaction = await getTransactionForSquad(connection, wallet, address, SquadExecutionStatus.waiting)
+  const transactions = await getTransactionsForSquad(
+    connection,
+    wallet,
+    address,
+    SquadExecutionStatus.waiting
+  )
   let status = SquadStatus.active
-  if (transaction) {
+  if (transactions.length > 0) {
     const user = wallet.publicKey.toBase58()
-    const approved = transaction.approved.map(approver => approver.toBase58())
-    if (approved.includes(user)) {
-      status = SquadStatus.waitingApproval
-    } else {
+    const approved = transactions.filter(
+      (transaction) => !transaction.approved.map((approver) => approver.toBase58()).includes(user)
+    )
+    if (approved.length > 0) {
       status = SquadStatus.requiresApproval
+    } else {
+      status = SquadStatus.waitingApproval
     }
   }
 
@@ -74,6 +82,7 @@ const getSquad: (
     createKey: squad.account.createKey.toBase58(),
     numberOfApprovers: squad.account.threshold,
     status,
+    waitingTransactions: transactions,
   }
 }
 
@@ -88,17 +97,17 @@ export const getSquadForOwner: (
 ) => {
   const squads = await getSquads(connection, wallet)
   return squads.find((squad) => {
-    const authority = getAuthorityKeyForSquad(wallet, squad)
+    const authority = getAuthorityKeyForSquad(wallet, squad.address)
     return authority.toBase58() == owner.toBase58()
   })
 }
 
-export const getAuthorityKeyForSquad: (wallet: WalletContextState, squad: Squad) => PublicKey = (
+export const getAuthorityKeyForSquad: (
   wallet: WalletContextState,
-  squad: Squad
-) => {
+  squadAddress: string
+) => PublicKey = (wallet: WalletContextState, squadAddress: string) => {
   const squads = squadsInstance(wallet)
-  return squads.getAuthorityPDA(new PublicKey(squad.address), 1)
+  return squads.getAuthorityPDA(new PublicKey(squadAddress), 1)
 }
 
 export const createSquad: (
@@ -120,6 +129,7 @@ export const createSquad: (
     members: multiSig.keys.map((key) => key.toBase58()),
     numberOfApprovers: multiSig.threshold,
     status: SquadStatus.active,
+    waitingTransactions: [],
   }
 }
 
@@ -136,21 +146,21 @@ export const isSquadWaitingApproval: (
     return false
   }
 
-  const transaction = await getTransactionForSquad(
+  const transactions = await getTransactionsForSquad(
     connection,
     wallet,
     squadAddress,
     SquadExecutionStatus.waiting
   )
-  return transaction !== undefined
+  return transactions.length > 0
 }
 
-const getTransactionForSquad: (
+const getTransactionsForSquad: (
   connection: Connection,
   wallet: WalletContextState,
   squadAddress: string,
   status: SquadExecutionStatus
-) => Promise<SquadTransaction> = async (
+) => Promise<SquadTransaction[]> = async (
   connection: Connection,
   wallet: WalletContextState,
   squadAddress: string,
@@ -168,38 +178,30 @@ const getTransactionForSquad: (
     },
   ])
 
-  const transaction = transactions.find((transaction) => {
+  const filteredTransactions = transactions.filter((transaction) => {
     const transactionStatus = toSquadExecutionStatus(transaction.account.status)
     return transactionStatus == status
   })
 
-  if (!transaction) {
-    return undefined
-  }
+  const result = filteredTransactions.map((transaction) => {
+    return {
+      publicKey: transaction.publicKey,
+      status: transaction.account.status,
+      approved: transaction.account.approved,
+    }
+  })
 
-  return {
-    publicKey: transaction.publicKey,
-    status: transaction.account.status,
-    approved: transaction.account.approved
-  }
+  return result
 }
 
 export const approveTransactionForSquad: (
-  connection: Connection,
   wallet: WalletContextState,
-  squad: Squad
+  transaction: SquadTransaction
 ) => Promise<SquadExecutionStatus> = async (
-  connection: Connection,
   wallet: WalletContextState,
-  squad: Squad
+  transaction: SquadTransaction
 ) => {
   const squads = squadsInstance(wallet)
-  let transaction = await getTransactionForSquad(
-    connection,
-    wallet,
-    squad.address,
-    SquadExecutionStatus.waiting
-  )
   await squads.approveTransaction(transaction.publicKey)
 
   transaction = await squads.getTransaction(transaction.publicKey)
@@ -241,4 +243,27 @@ export const executeInstructionForSquad: (
   }
 
   return status
+}
+
+export const getInstructionForSquad: (
+  connection: Connection,
+  wallet: WalletContextState,
+  squad: Squad
+) => Promise<any> = async (connection: Connection, wallet: WalletContextState, squad: Squad) => {
+  const program = squadsProgram(connection, wallet)
+  const key = getAuthorityKeyForSquad(wallet, squad.address)
+  const instructions = await program.account.msInstruction.all([
+    {
+      memcmp: {
+        offset:
+          8 + // Anchor discriminator
+          32 + // program_id
+          8 +
+          32 * 2, // keys
+        bytes: key.toBase58(),
+      },
+    },
+  ])
+
+  return instructions
 }

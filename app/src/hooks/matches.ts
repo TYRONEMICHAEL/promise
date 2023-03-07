@@ -17,7 +17,7 @@ export const useMatches: (onlyShowYourMatches) => [Match[], boolean] = (onlyShow
     setIsLoading(true)
     getMatches(connection, wallet, onlyShowYourMatches)
       .then(setMatches)
-      .catch(nothing)
+      .catch(console.error)
       .finally(() => {
         setIsLoading(false)
       })

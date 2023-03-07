@@ -584,6 +584,11 @@ export class PromiseSDK {
             isSigner: true,
             isWritable: true,
           },
+          {
+            pubkey: SystemProgram.programId,
+            isWritable: false,
+            isSigner: false,
+          },
         ]),
       promiseeAccount,
     ];
