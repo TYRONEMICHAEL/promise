@@ -1,8 +1,4 @@
-import {
-  mdiAccountMultiple,
-  mdiCheck,
-  mdiTableTennis
-} from '@mdi/js'
+import { mdiAccountMultiple, mdiCheck, mdiTableTennis } from '@mdi/js'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
@@ -125,6 +121,24 @@ const MatchDetails = () => {
                     <b>State</b>
                   </p>
                   <p>{stateToString(match.state)}</p>
+                </div>
+
+                <BaseDivider />
+
+                <div className="flex items-center justify-between">
+                  <p>
+                    <b>Created At</b>
+                  </p>
+                  <p>{match.createdAt.toDateString()}</p>
+                </div>
+
+                <BaseDivider />
+
+                <div className="flex items-center justify-between">
+                  <p>
+                    <b>Updated At</b>
+                  </p>
+                  <p>{match.updatedAt.toDateString()}</p>
                 </div>
 
                 <BaseDivider />

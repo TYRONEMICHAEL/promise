@@ -10,7 +10,6 @@ import {
   maxNumberOfMembersPerSquad,
   toSquadExecutionStatus,
 } from '../interfaces/squads'
-import { getMatchForTransaction } from './matches'
 
 export const getSquads: (
   connection: Connection,

@@ -12,7 +12,7 @@ import { RulesetDate } from 'promise-sdk/lib/sdk/src/rules/RulsetDate'
 import { SolGate } from 'promise-sdk/lib/sdk/src/rules/SolGate'
 import { promiseInstance, promiseNetworkPublicKey } from '../env'
 import { Match, MatchDetails } from '../interfaces/matches'
-import { Squad, SquadExecutionStatus, SquadTransaction } from '../interfaces/squads'
+import { Squad, SquadExecutionStatus } from '../interfaces/squads'
 import { executeInstructionForSquad, getAuthorityKeyForSquad, getSquadForOwner } from './squads'
 
 export const getMatches: (
@@ -53,6 +53,8 @@ export const getMatches: (
         promise.promiseeRuleset.endDate != null
           ? new Date(Number(promise.promiseeRuleset.endDate.date))
           : null,
+      createdAt: promise.createdAt,
+      updatedAt: promise.updatedAt,
       numberOfPromisees: promise.numberOfPromisees,
     }
   })
@@ -91,6 +93,8 @@ export const createMatch: (
       activatedPromise.promiseeRuleset.endDate != null
         ? new Date(Number(activatedPromise.promiseeRuleset.endDate.date))
         : null,
+    createdAt: activatedPromise.createdAt,
+    updatedAt: activatedPromise.updatedAt,
     numberOfPromisees: activatedPromise.numberOfPromisees,
   }
 }
@@ -132,12 +136,6 @@ export const getSquadsForMatch: (
   )
 
   return filteredPromisees.filter((x) => x !== undefined)
-}
-
-export const getMatchForTransaction = async (wallet: WalletContextState, connection: Connection, transaction: SquadTransaction) => {
-    const matches = await getMatches(connection, wallet)
-    console.log(matches)
-    return []
 }
 
 export const completeMatchForSquad: (

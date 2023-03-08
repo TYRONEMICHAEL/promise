@@ -5,7 +5,6 @@ export const nothing = (value) => {
 
   if (value instanceof AnchorError) {
     const error: AnchorError = value
-    console.log(error)
     console.error(error.error.errorMessage)
   } else {
     console.log(value)

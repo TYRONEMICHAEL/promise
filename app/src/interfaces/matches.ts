@@ -6,8 +6,8 @@ export type Match = {
   state: PromiseState
   promiseeWager?: number
   endDate?: Date
-  //   updatedAt: Date;
-  //   createdAt: Date;
+  updatedAt: Date
+  createdAt: Date
   numberOfPromisees: number
 }
 
