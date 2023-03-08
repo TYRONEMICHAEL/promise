@@ -18,7 +18,8 @@ export type Promisor = {
   /** Number of Promises created by the Promisor */
   numberOfPromises: number;
 
-  // updatedAt: Date;
+  /** Date the Promisor was updated */
+  updatedAt: Date;
 };
 
 export const createPromisorSeeds = (

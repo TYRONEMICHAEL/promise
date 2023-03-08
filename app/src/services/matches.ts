@@ -4,7 +4,6 @@ import { PromiseSDK } from 'promise-sdk/lib/sdk/src/PromiseSDK'
 import { Network } from 'promise-sdk/lib/sdk/src/network/Network'
 import { PromiseField } from 'promise-sdk/lib/sdk/src/promise/PromiseFilter'
 import { PromiseProtocol } from 'promise-sdk/lib/sdk/src/promise/PromiseProtocol'
-import { PromiseState } from 'promise-sdk/lib/sdk/src/promise/PromiseState'
 import { PromiseeField } from 'promise-sdk/lib/sdk/src/promisee/PromiseeFilter'
 import { PromiseeRuleset } from 'promise-sdk/lib/sdk/src/promisee/PromiseeRuleset'
 import { PromisorField } from 'promise-sdk/lib/sdk/src/promisor/PromisorFilter'
@@ -12,9 +11,9 @@ import { PromisorRuleset } from 'promise-sdk/lib/sdk/src/promisor/PromisorRulese
 import { RulesetDate } from 'promise-sdk/lib/sdk/src/rules/RulsetDate'
 import { SolGate } from 'promise-sdk/lib/sdk/src/rules/SolGate'
 import { promiseInstance, promiseNetworkPublicKey } from '../env'
+import { Match, MatchDetails } from '../interfaces/matches'
 import { Squad, SquadExecutionStatus } from '../interfaces/squads'
 import { executeInstructionForSquad, getAuthorityKeyForSquad, getSquadForOwner } from './squads'
-import { Match, MatchDetails } from '../interfaces/matches'
 
 export const getMatches: (
   connection: Connection,
@@ -52,8 +51,10 @@ export const getMatches: (
           : null,
       endDate:
         promise.promiseeRuleset.endDate != null
-          ? new Date(promise.promiseeRuleset.endDate.date)
+          ? new Date(Number(promise.promiseeRuleset.endDate.date))
           : null,
+      createdAt: promise.createdAt,
+      updatedAt: promise.updatedAt,
       numberOfPromisees: promise.numberOfPromisees,
     }
   })
@@ -76,7 +77,7 @@ export const createMatch: (
     matchDetails.endDate != null && matchDetails.endDate > new Date()
       ? new RulesetDate(matchDetails.endDate.getTime())
       : null,
-    new SolGate(matchDetails.amountInSol)
+    new SolGate(matchDetails.amountInLamports)
   )
   const promise = await promiseSDK.createPromise(promisor, promisorRuleset, promiseeRuleset)
   const activatedPromise = await promiseSDK.activatePromise(promise)
@@ -90,8 +91,10 @@ export const createMatch: (
         : null,
     endDate:
       activatedPromise.promiseeRuleset.endDate != null
-        ? new Date(activatedPromise.promiseeRuleset.endDate.date)
+        ? new Date(Number(activatedPromise.promiseeRuleset.endDate.date))
         : null,
+    createdAt: activatedPromise.createdAt,
+    updatedAt: activatedPromise.updatedAt,
     numberOfPromisees: activatedPromise.numberOfPromisees,
   }
 }
@@ -109,7 +112,7 @@ export const acceptMatchForSquad: (
 ) => {
   const promiseSDK = promiseInstance(connection, wallet)
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
-  const owner = getAuthorityKeyForSquad(wallet, squad)
+  const owner = getAuthorityKeyForSquad(wallet, squad.address)
   const instruction = await promiseSDK.buildAcceptPromise(promise, owner)
   return await executeInstructionForSquad(wallet, squad, instruction)
 }
@@ -148,7 +151,7 @@ export const completeMatchForSquad: (
 ) => {
   const promiseSDK = promiseInstance(connection, wallet)
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
-  const owner = getAuthorityKeyForSquad(wallet, squad)
+  const owner = getAuthorityKeyForSquad(wallet, squad.address)
   const promisees = await promiseSDK.getPromisees({
     field: PromiseeField.owner,
     value: owner.toBase58(),

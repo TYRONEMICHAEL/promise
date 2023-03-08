@@ -8,12 +8,24 @@ export type Squad = {
   createKey: string
   numberOfApprovers: number
   status: SquadStatus
+  waitingTransactions: SquadTransaction[] 
 }
 
 export enum SquadStatus {
-    active,
-    waitingApproval,
-    requiresApproval
+  active,
+  waitingApproval,
+  requiresApproval,
+}
+
+export const statusToString = (status) => {
+  switch (status) {
+    case SquadStatus.active:
+      return 'Active'
+    case SquadStatus.requiresApproval:
+      return 'Requires approval'
+    case SquadStatus.waitingApproval:
+      return 'Waiting approval from member'
+  }
 }
 
 export enum SquadExecutionStatus {
@@ -29,6 +41,11 @@ export type SquadTransaction = {
   publicKey: PublicKey
   status: any
   approved: PublicKey[]
+}
+
+export type SquadInstruction = {
+    address: string
+    execute: boolean
 }
 
 export const toSquadExecutionStatus = (state) => {

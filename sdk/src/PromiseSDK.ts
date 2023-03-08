@@ -1,13 +1,13 @@
 import { AnchorProvider, Program } from "@project-serum/anchor";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
+import { MethodsBuilder } from "@project-serum/anchor/dist/cjs/program/namespace/methods";
+import { AllInstructions } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
 import {
-  ConfirmOptions,
   Connection,
   Keypair,
   PublicKey,
   SystemProgram,
-  Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
 import fs from "fs";
@@ -28,8 +28,6 @@ import {
   fromPromisorState,
   toPromisorState,
 } from "./promisor/PromisorState";
-import { MethodsBuilder } from "@project-serum/anchor/dist/cjs/program/namespace/methods";
-import { AllInstructions } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 
 const idl = require("./promise.json");
 const programID = new PublicKey(idl.metadata.address);
@@ -44,6 +42,7 @@ export class PromiseSDK {
       wallet,
       AnchorProvider.defaultOptions()
     );
+    // TODO update programID based on endpoint
     this.program = new Program(idl, programID, provider);
     this.wallet = wallet;
   }
@@ -64,6 +63,10 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Returns the Program ID of the Promise protocol.
+   * @returns Public Key of the Promise protocol.
+   */
   public getProgramId(): PublicKey {
     return this.program.programId;
   }
@@ -90,7 +93,8 @@ export class PromiseSDK {
   }
 
   /**
-   * Gets all networks that are available on the program.
+   * Gets all Networks that are available on the program.
+   * @param filter Filter to narrow down the list of Networks.
    * @returns Array of Networks.
    */
   public async getNetworks(): Promise<Network[]> {
@@ -127,6 +131,12 @@ export class PromiseSDK {
     return network;
   }
 
+  /**
+   * Builds an instruction that will initialise a Network.
+   * @param ruleset Rules for the Network.
+   * @param owner Owner that will create the Network and be charged.
+   * @returns An instruction that will initialise a Network.
+   */
   public async buildCreateNetwork(
     ruleset: NetworkRuleset,
     owner: PublicKey
@@ -177,6 +187,13 @@ export class PromiseSDK {
     return updatedNetwork;
   }
 
+  /**
+   * Builds an instruction to update an existing Network with a new ruleset.
+   * @param network Network to update.
+   * @param ruleset Updated ruleset for the Network.
+   * @param owner The owner of the Network.
+   * @returns Instruction that updates the Network.
+   */
   public async buildUpdateNetwork(
     network: Network,
     ruleset: NetworkRuleset,
@@ -208,6 +225,11 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the specified Promisor using the public address.
+   * @param pubKey Public key of the Promisor account.
+   * @returns Promisor if it exists.
+   */
   public async getPromisor(pubKey: PublicKey): Promise<Promisor | undefined> {
     const promisor = await this.program.account.promisor.fetch(pubKey);
     return {
@@ -216,9 +238,15 @@ export class PromiseSDK {
       network: promisor.promiseNetwork,
       state: toPromisorState(promisor.state),
       numberOfPromises: promisor.numPromises,
+      updatedAt: new Date(promisor.updatedAt.toNumber()),
     };
   }
 
+  /**
+   * Gets all Promisors that are available on the program.
+   * @param filter Filter to narrow down the list of Promisors.
+   * @returns Array of Promisors.
+   */
   public async getPromisors(filter?: PromisorFilter): Promise<Promisor[]> {
     const filters = fromPromisorFilter(filter);
     const promisors = await this.program.account.promisor.all(filters);
@@ -229,10 +257,16 @@ export class PromiseSDK {
         network: promisor.account.promiseNetwork,
         state: toPromisorState(promisor.account.state),
         numberOfPromises: promisor.account.numPromises,
+        updatedAt: new Date(promisor.account.updatedAt.toNumber()),
       };
     });
   }
 
+  /**
+   * Creates a Promisor on the Network.
+   * @param network Network the Promisor will belong to.
+   * @returns Newly created Promisor.
+   */
   public async createPromisor(network: Network): Promise<Promisor> {
     const [method, promisorAccount] = this._buildCreatePromisor(
       network,
@@ -248,6 +282,12 @@ export class PromiseSDK {
     return promisor;
   }
 
+  /**
+   * Builds an instruction that creates a Promisor on a Network.
+   * @param network Network the Promisor will belong to.
+   * @param owner The owner of the Promisor.
+   * @returns An instruction that creates a Promisor.
+   */
   public async buildCreatePromisor(
     network: Network,
     owner: PublicKey
@@ -276,6 +316,12 @@ export class PromiseSDK {
     ];
   }
 
+  /**
+   * Updates the state of an existing Promisor.
+   * @param promisor Promisor to update.
+   * @param state New state for the Promisor.
+   * @returns Updated Promisor.
+   */
   public async updatePromisor(
     promisor: Promisor,
     state: PromisorState
@@ -294,6 +340,13 @@ export class PromiseSDK {
     return updatePromisor;
   }
 
+  /**
+   * Builds an instruction to update the state of an existing Promisor.
+   * @param promisor Promisor to update.
+   * @param state New state for the Promisor.
+   * @param owner The owner of the Promisor.
+   * @returns An instruction that updates the Promisor.
+   */
   public async buildUpdatePromisor(
     promisor: Promisor,
     state: PromisorState,
@@ -327,6 +380,11 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the specified Promise using the public address.
+   * @param pubKey Public key of the Promise account.
+   * @returns Promise if it exists.
+   */
   public async getPromise(
     pubKey: PublicKey
   ): Promise<PromiseProtocol | undefined> {
@@ -339,10 +397,17 @@ export class PromiseSDK {
       state: toPromiseState(promise.state),
       promiseeRuleset: PromiseeRuleset.fromData(promise.promiseeData),
       promisorRuleset: PromisorRuleset.fromData(promise.promisorData),
+      createdAt: new Date(promise.createdAt.toNumber()),
+      updatedAt: new Date(promise.updatedAt.toNumber()),
       numberOfPromisees: promise.numPromisees,
     };
   }
 
+  /**
+   * Gets all Promises that are available on the program.
+   * @param filter Filter to narrow down the list of Promises.
+   * @returns Array of Promises.
+   */
   public async getPromises(filter?: PromiseFilter): Promise<PromiseProtocol[]> {
     const filters = fromPromiseFilter(filter);
     const promises = await this.program.account.promise.all(filters);
@@ -355,11 +420,20 @@ export class PromiseSDK {
         state: toPromiseState(promise.account.state),
         promiseeRuleset: PromiseeRuleset.fromData(promise.account.promiseeData),
         promisorRuleset: PromisorRuleset.fromData(promise.account.promisorData),
+        createdAt: new Date(promise.account.createdAt.toNumber()),
+        updatedAt: new Date(promise.account.updatedAt.toNumber()),
         numberOfPromisees: promise.account.numPromisees,
       };
     });
   }
 
+  /**
+   * Creates a Promise for the Promisor.
+   * @param promisor Promisor that owns the Promise.
+   * @param promisorRuleset Ruleset for the Promisor.
+   * @param promiseeRuleset Ruleset for the Promisee.
+   * @returns Newly created Promise.
+   */
   public async createPromise(
     promisor: Promisor,
     promisorRuleset: PromisorRuleset,
@@ -381,6 +455,14 @@ export class PromiseSDK {
     return promise;
   }
 
+  /**
+   * Builds an instruction that creates a Promise for the Promisor.
+   * @param promisor Promisor that owns the Promise.
+   * @param promisorRuleset Ruleset for the Promisor.
+   * @param promiseeRuleset Ruleset for the Promisee.
+   * @param owner Owner of the Promise/Promisor.
+   * @returns An instruction that creates a Promise.
+   */
   public async buildCreatePromise(
     promisor: Promisor,
     promisorRuleset: PromisorRuleset,
@@ -431,6 +513,13 @@ export class PromiseSDK {
     ];
   }
 
+  /**
+   * Updates an existing Promise with new rulesets.
+   * @param promise Promise to update.
+   * @param promisorRuleset New ruleset for the Promisor.
+   * @param promiseeRuleset New ruleset for the Promisee.
+   * @returns Updated Promise.
+   */
   public async updatePromise(
     promise: PromiseProtocol,
     promisorRuleset: PromisorRuleset,
@@ -451,6 +540,14 @@ export class PromiseSDK {
     return updatedPromise;
   }
 
+  /**
+   * Builds an instruction that updates a promise.
+   * @param promise Promise to update.
+   * @param promisorRuleset New ruleset for the Promisor.
+   * @param promiseeRuleset New ruleset for the Promisee.
+   * @param owner Owner of the Promise.
+   * @returns An instruction that updates a promise.
+   */
   public async buildUpdatePromise(
     promise: PromiseProtocol,
     promisorRuleset: PromisorRuleset,
@@ -490,6 +587,11 @@ export class PromiseSDK {
       ]);
   }
 
+  /**
+   * Sets the Promise to active state.
+   * @param promise Promise to activate.
+   * @returns An updated Promise.
+   */
   public async activatePromise(
     promise: PromiseProtocol
   ): Promise<PromiseProtocol> {
@@ -506,6 +608,12 @@ export class PromiseSDK {
     return activatedPromise;
   }
 
+  /**
+   * Builds an instruction that activates a Promise.
+   * @param promise Promise to activate.
+   * @param owner Owner of the Promise.
+   * @returns An instruction that activates a Promise.
+   */
   public async buildActivatePromise(
     promise: PromiseProtocol,
     owner: PublicKey
@@ -538,6 +646,11 @@ export class PromiseSDK {
       ]);
   }
 
+  /**
+   * Creates and assigns a Promisee to the Promise.
+   * @param promise Promise to create the Promisee under.
+   * @returns Promisee for the Promise.
+   */
   public async acceptPromise(promise: PromiseProtocol): Promise<Promisee> {
     const [method, promiseeAccount] = this._buildAcceptPromise(
       promise,
@@ -553,6 +666,12 @@ export class PromiseSDK {
     return promisee;
   }
 
+  /**
+   * Builds an instruction that creates and assigns a Promisee to the Promise.
+   * @param promise Promise to create the Promisee under.
+   * @param owner Owner of the Promisee.
+   * @returns An instruction that creates a Promisee.
+   */
   public async buildAcceptPromise(
     promise: PromiseProtocol,
     owner: PublicKey
@@ -584,11 +703,22 @@ export class PromiseSDK {
             isSigner: true,
             isWritable: true,
           },
+          {
+            pubkey: SystemProgram.programId,
+            isWritable: false,
+            isSigner: false,
+          },
         ]),
       promiseeAccount,
     ];
   }
 
+  /**
+   * Sets a Promise to complete and assigns the Promisee with the reward.
+   * @param promise Promise to complete.
+   * @param promisee Promisee to transfer the reward.
+   * @returns Updated Promise.
+   */
   public async completePromise(
     promise: PromiseProtocol,
     promisee: Promisee
@@ -607,6 +737,13 @@ export class PromiseSDK {
     return completedPromise;
   }
 
+  /**
+   * Builds an instruction that sets a Promise to complete and assigns the Promisee with the reward.
+   * @param promise Promise to complete.
+   * @param promisee Promisee to transfer the reward.
+   * @param owner Owner of the Promise.
+   * @returns An instruction that completes a Promise.
+   */
   public async buildCompletePromise(
     promise: PromiseProtocol,
     promisee: Promisee,
@@ -652,6 +789,11 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the specified Promisee using the public address.
+   * @param pubKey Public key of the Promisee account.
+   * @returns Promisee if it exists.
+   */
   public async getPromisee(pubKey: PublicKey): Promise<Promisee | undefined> {
     const promisee = await this.program.account.promisee.fetch(pubKey);
     return {
@@ -664,6 +806,11 @@ export class PromiseSDK {
     };
   }
 
+  /**
+   * Gets all Promisees that are available on the program.
+   * @param filter Filter to narrow down the list of Promisees.
+   * @returns Array of Promisees.
+   */
   public async getPromisees(filter?: PromiseeFilter): Promise<Promisee[]> {
     const filters = fromPromiseeFilter(filter);
     const promisees = await this.program.account.promisee.all(filters);

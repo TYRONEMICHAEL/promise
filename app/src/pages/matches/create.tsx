@@ -1,7 +1,4 @@
-import {
-    mdiBallotOutline,
-    mdiCash
-} from '@mdi/js'
+import { mdiBallotOutline, mdiCash } from '@mdi/js'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
@@ -22,79 +19,102 @@ import { createMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { DatePickerField } from '../../components/DatePickerField'
-  
-  const CreateMatch = () => {
-    const dispatch = useAppDispatch()
-    const router = useRouter()
-    const { connection } = useConnection()
-    const wallet = useWallet()
-    const [isCreating, setIsCreating] = useState(false)
-  
-    const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
-      message: string,
-      success: boolean
-    ) => {
-      return {
-        text: message,
-        lifetime: 3000,
-        color: success ? 'success' : 'danger',
-      }
+import * as Yup from 'yup'
+import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
+import FormCheckRadio from '../../components/FormCheckRadio'
+import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+
+const CreateMatch = () => {
+  const dispatch = useAppDispatch()
+  const router = useRouter()
+  const { connection } = useConnection()
+  const wallet = useWallet()
+  const [isCreating, setIsCreating] = useState(false)
+
+  const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
+    message: string,
+    success: boolean
+  ) => {
+    return {
+      text: message,
+      lifetime: 3000,
+      color: success ? 'success' : 'danger',
     }
-  
-    const createMatchAction = async ({ wager, endDate }) => {
-      setIsCreating(true)
-      createMatch(
-        connection,
-        wallet,
-        {
-            amountInSol: wager,
-            endDate: new Date(endDate)
-        }
-      )
-        .then(match => {
-          const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
-          dispatch(pushMessage(message))
-        })
-        .catch(() => {
-          const message = createSnackbarMessage("Failed to create match", false)
-          dispatch(pushMessage(message))
-        })
-        .finally(() => {
-          setIsCreating(false)
-          router.push('/matches')
-        })
-    }
-  
-    return (
-      <>
-        <Head>
-          <title>{getPageTitle('Create Match')}</title>
-        </Head>
-  
-        <SectionMain>
-          <SectionTitleLineWithButton icon={mdiBallotOutline} title="Create" main excludeButton/>
-  
-          <CardBox>
-            <Formik
-              initialValues={{
-                wager: 0,
-                endDate: "2022/02/01"
-              }}
-              onSubmit={(values) => createMatchAction(values)}
-            >
+  }
+
+  const createMatchAction = async ({ wager, hasEndDate, endDate }) => {
+    setIsCreating(true)
+    createMatch(connection, wallet, {
+      amountInLamports: wager * LAMPORTS_PER_SOL,
+      endDate: hasEndDate ? new Date(endDate) : null,
+    })
+      .then((match) => {
+        const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
+        dispatch(pushMessage(message))
+      })
+      .catch(() => {
+        const message = createSnackbarMessage('Failed to create match', false)
+        dispatch(pushMessage(message))
+      })
+      .finally(() => {
+        setIsCreating(false)
+        router.push('/matches')
+      })
+  }
+
+  const createInitialValues = {
+    wager: '',
+    hasEndDate: false,
+    endDate: new Date().toLocaleDateString(),
+  }
+
+  const createSchema = Yup.object().shape({
+    wager: Yup.number().moreThan(0, 'Wager needs to be more than 0').required("Wager is required"),
+  })
+
+  return (
+    <>
+      <Head>
+        <title>{getPageTitle('Create Match')}</title>
+      </Head>
+
+      <SectionMain>
+        <SectionTitleLineWithButton icon={mdiBallotOutline} title="Create" main excludeButton />
+        <CardBox>
+          <Formik
+            initialValues={createInitialValues}
+            validationSchema={createSchema}
+            onSubmit={(values) => createMatchAction(values)}
+          >
+            {({ values, errors, touched }) => (
               <Form>
-                <FormField label="Details" icons={[mdiCash]}>
-                  <Field name="wager" type="number" placeholder="Wager" />
+                <FormField
+                  label="Details"
+                  help="The wager that each squad will have to wage in order to participate."
+                  icons={[mdiCash]}
+                  error={errors.wager && touched.wager ? errors.wager : null}
+                >
+                  <Field name="wager" type="number" placeholder="Wager (SOL)" />
                 </FormField>
-  
+
                 <BaseDivider />
-  
+
                 <FormField>
-                    <DatePickerField name="endDate" dateFormat="yyyy/mm/dd" />
+                  <FormCheckRadioGroup>
+                    <FormCheckRadio type="checkbox" label="Has end date?">
+                      <Field type="checkbox" name="hasEndDate" />
+                    </FormCheckRadio>
+                  </FormCheckRadioGroup>
                 </FormField>
-  
+
+                {values.hasEndDate && (
+                  <FormField help="Date the match ends.">
+                    <DatePickerField name="endDate" dateFormat="dd/mm/yyyy" />
+                  </FormField>
+                )}
+
                 <BaseDivider />
-  
+
                 {isCreating && <LoadingIndicator />}
                 {!isCreating && (
                   <>
@@ -105,16 +125,16 @@ import { DatePickerField } from '../../components/DatePickerField'
                   </>
                 )}
               </Form>
-            </Formik>
-          </CardBox>
-        </SectionMain>
-      </>
-    )
-  }
-  
-  CreateMatch.getLayout = function getLayout(page: ReactElement) {
-    return <LayoutApp>{page}</LayoutApp>
-  }
-  
-  export default CreateMatch
-  
+            )}
+          </Formik>
+        </CardBox>
+      </SectionMain>
+    </>
+  )
+}
+
+CreateMatch.getLayout = function getLayout(page: ReactElement) {
+  return <LayoutApp>{page}</LayoutApp>
+}
+
+export default CreateMatch

@@ -27,9 +27,11 @@ export type PromiseProtocol = {
   /** Rules for the Promisor */
   promisorRuleset: PromisorRuleset;
 
-  // updatedAt: Date;
+  /** Date the Promise was updated */
+  updatedAt: Date;
 
-  // createdAt: Date;
+  /** Date the Promise was created */
+  createdAt: Date;
 
   /** Number of Promisees for the Promise */
   numberOfPromisees: number;
