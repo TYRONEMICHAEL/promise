@@ -1,5 +1,10 @@
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from "@solana/web3.js";
 import { expect } from "chai";
 import { PromiseSDK } from "../src/PromiseSDK";
 import { Network } from "../src/network/Network";
@@ -13,10 +18,6 @@ import { PromisorRuleset } from "../src/promisor/PromisorRuleset";
 import { PromisorState } from "../src/promisor/PromisorState";
 import { RulesetDate } from "../src/rules/RulsetDate";
 import { SolGate } from "../src/rules/SolGate";
-import { exit } from "process";
-
-const spawn = require("child_process").spawn;
-const program = require("../src/promise.json");
 
 describe("PromiseSDK", () => {
   let promise: PromiseSDK;
@@ -31,13 +32,14 @@ describe("PromiseSDK", () => {
     authority = Keypair.generate();
     promise = new PromiseSDK(
       new Connection("http://127.0.0.1:8899"),
-      new NodeWallet(authority)
+      new NodeWallet(authority),
+      new PublicKey("EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A")
     );
     await topUpAccount(authority);
   });
 
   it("should initialise a local sdk and return program id", async () => {
-    const programId = program.metadata.address;
+    const programId = "EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A";
 
     expect(promise.getProgramId().toBase58()).to.eq(programId);
   });
