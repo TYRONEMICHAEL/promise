@@ -1,17 +1,17 @@
 import { AnchorProvider, Program } from "@project-serum/anchor";
-import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import { MethodsBuilder } from "@project-serum/anchor/dist/cjs/program/namespace/methods";
 import { AllInstructions } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
 import {
+  Cluster,
   Connection,
-  Keypair,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
+  clusterApiUrl
 } from "@solana/web3.js";
-import fs from "fs";
 import { Promise as PromiseAccount } from "../../target/types/promise";
+import { IDL } from "./idl/promise";
 import { Network, createNetworkSeeds } from "./network/Network";
 import { NetworkRuleset } from "./network/NetworkRuleset";
 import { PromiseFilter, fromPromiseFilter } from "./promise/PromiseFilter";
@@ -29,32 +29,57 @@ import {
   toPromisorState,
 } from "./promisor/PromisorState";
 
-const idl = require("./promise.json");
-const programID = new PublicKey(idl.metadata.address);
+type ExtendedCluster = "localnet" | Cluster;
+
+const programIDs: Record<ExtendedCluster, string> = {
+  localnet: "EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A",
+  devnet: "DB5HAVRLPUYfUcAKK8A57JAihfZvcT3q17wNESfVb4AP",
+  testnet: "EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A",
+  "mainnet-beta": "TODO",
+};
 
 export class PromiseSDK {
   program: Program<PromiseAccount>;
   wallet: Wallet;
 
-  public constructor(connection: Connection, wallet: Wallet) {
+  public constructor(
+    connection: Connection,
+    wallet: Wallet,
+    programID: PublicKey
+  ) {
     const provider = new AnchorProvider(
       connection,
       wallet,
       AnchorProvider.defaultOptions()
     );
-    // TODO update programID based on endpoint
-    this.program = new Program(idl, programID, provider);
+    this.program = new Program(IDL, programID, provider);
     this.wallet = wallet;
   }
 
-  public static forLocal(secretKeyPath: string): PromiseSDK {
-    const connection = new Connection("http://127.0.0.1:8899");
-    const secretKey = JSON.parse(fs.readFileSync(secretKeyPath).toString());
-    const decodedSecretKey = new Uint8Array(secretKey);
-    const keyPair = Keypair.fromSecretKey(decodedSecretKey);
-    const wallet = new NodeWallet(keyPair);
+  public static localnet(wallet: Wallet): PromiseSDK {
+    return this.create(wallet, "localnet");
+  }
 
-    return new PromiseSDK(connection, wallet);
+  public static devnet(wallet: Wallet): PromiseSDK {
+    return this.create(wallet, "devnet");
+  }
+
+  public static testnet(wallet: Wallet): PromiseSDK {
+    return this.create(wallet, "testnet");
+  }
+
+  public static mainnet(wallet: Wallet): PromiseSDK {
+    return this.create(wallet, "mainnet-beta");
+  }
+
+  private static create(wallet: Wallet, env: ExtendedCluster): PromiseSDK {
+    const endpoint =
+      env == "localnet"
+        ? "http://127.0.0.1:8899"
+        : clusterApiUrl(env as Cluster);
+    const connection = new Connection(endpoint);
+    const programID = new PublicKey(programIDs[env] as string);
+    return new PromiseSDK(connection, wallet, programID);
   }
 
   /**

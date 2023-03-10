@@ -35,5 +35,17 @@ export const squadsProgram = (connection: Connection, wallet: WalletContextState
 export const promiseNetworkAddress = process.env.NEXT_PUBLIC_PROMISE_NETWORK_ADDRESS
 export const promiseNetworkPublicKey = new PublicKey(promiseNetworkAddress)
 export const promiseInstance = (connection: Connection, wallet: WalletContextState) => {
-  return new PromiseSDK(connection, wallet)
+  switch (solanaWalletCluster) {
+    case 'localnet':
+      return PromiseSDK.localnet(wallet)
+    case 'devnet':
+      return PromiseSDK.devnet(wallet)
+    case 'testnet':
+      return PromiseSDK.testnet(wallet)
+    case 'mainnet':
+    case 'mainnet-beta':
+      return PromiseSDK.mainnet(wallet)
+    default:
+      return PromiseSDK.localnet(wallet)
+  }
 }
