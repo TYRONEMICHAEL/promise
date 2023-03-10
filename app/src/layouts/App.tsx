@@ -7,12 +7,10 @@ import FooterBar from '../components/FooterBar'
 import NavBarItemPlain from '../components/NavBarItemPlain'
 import { RequiresWallet } from '../components/RequiresWallet'
 import SnackBar from '../components/SnackBar'
-import TwoByTwoLogo from '../components/TwoByTwoLogo'
 import NavBar from '../components/navbar/NavBar'
 import menu from '../menus/menu'
 import { useAppDispatch, useAppSelector } from '../stores/hooks'
 import { asideLgToggle, asideMobileToggle, setIsAsideMobileExpanded } from '../stores/layoutSlice'
-import { localStorageDarkModeKey } from '../config'
 
 type Props = {
   requiresWallet?: boolean
@@ -61,13 +59,6 @@ export default function LayoutApp({ requiresWallet = true, children }: Props) {
           >
             <BaseIcon path={mdiMenu} size="24" />
           </NavBarItemPlain>
-          <section className={`mb-6 flex items-center justify-center py-6`}>
-            <div className="flex items-center justify-center">
-              <TwoByTwoLogo />
-              <div className="px-1" />
-              <h1 className={`leading-tight text-3xl`}>two x two</h1>
-            </div>
-          </section>
         </NavBar>
         {isConnected && <AsideMenu menu={menu} />}
         {(!requiresWallet || isConnected) && children}

@@ -91,7 +91,6 @@ const AsideMenu = ({ menu }: Props) => {
         }
       >
         <div className="flex-1 px-3 flex justify-center">
-          {isPrimaryMenuCompact && (<b className="font-black">2x2</b>)}
           {!isPrimaryMenuCompact && (<b className="font-black">two x two</b>)}
         </div>
       </AsideMenuLayer>
