@@ -5,11 +5,12 @@ export const getWalletBalance = async (connection: Connection, wallet: WalletCon
   return await getBalanceForAccount(connection, wallet.publicKey)
 }
 
-export const getBalanceForAccount = async (connection: Connection, publicKey: PublicKey) => {
+export const getBalanceForAccount = async (connection: Connection, publicKey: PublicKey): Promise<number> => {
   const accountInfo = await connection.getAccountInfo(publicKey)
   if (!accountInfo) {
     return 0
   }
 
-  return accountInfo.lamports / LAMPORTS_PER_SOL
+  const amount = accountInfo.lamports / LAMPORTS_PER_SOL
+  return (Math.round(amount * 100) / 100)
 }
