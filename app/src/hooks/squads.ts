@@ -8,19 +8,15 @@ export const useSquads: () => [Squad[], boolean] = () => {
   const [squads, setSquads] = useState([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const { connection } = useConnection()
-  const wallet = useWallet()
-
   useEffect(() => {
-    if (!connection || !wallet) return
     setIsLoading(true)
-    getSquads(connection, wallet)
+    getSquads()
       .then(setSquads)
       .catch(nothing)
       .finally(() => {
         setIsLoading(false)
       })
-  }, [wallet, connection, setSquads, setIsLoading])
+  }, [setSquads, setIsLoading])
 
   return [squads, isLoading]
 }

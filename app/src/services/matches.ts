@@ -1,197 +1,181 @@
-import { WalletContextState } from '@solana/wallet-adapter-react'
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
-import { PromiseSDK } from 'promise-sdk/lib/sdk/src/PromiseSDK'
-import { Network } from 'promise-sdk/lib/sdk/src/network/Network'
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { PromiseField } from 'promise-sdk/lib/sdk/src/promise/PromiseFilter'
 import { PromiseProtocol } from 'promise-sdk/lib/sdk/src/promise/PromiseProtocol'
 import { PromiseeField } from 'promise-sdk/lib/sdk/src/promisee/PromiseeFilter'
-import { PromiseeRuleset } from 'promise-sdk/lib/sdk/src/promisee/PromiseeRuleset'
+import { Promisor } from 'promise-sdk/lib/sdk/src/promisor/Promisor'
 import { PromisorField } from 'promise-sdk/lib/sdk/src/promisor/PromisorFilter'
 import { PromisorRuleset } from 'promise-sdk/lib/sdk/src/promisor/PromisorRuleset'
-import { RulesetDate } from 'promise-sdk/lib/sdk/src/rules/RulsetDate'
-import { SolGate } from 'promise-sdk/lib/sdk/src/rules/SolGate'
-import { promiseInstance, promiseNetworkPublicKey } from '../env'
+import { promiseInstance, promiseNetworkAddress, promiseNetworkPublicKey } from '../env'
 import { Match, MatchDetails } from '../interfaces/matches'
 import { Squad, SquadExecutionStatus } from '../interfaces/squads'
-import { executeInstructionForSquad, getAuthorityKeyForSquad, getSquadForOwner } from './squads'
+import { getConnection, getWallet } from './account'
+import {
+  executeInstructionForSquad,
+  getAuthorityKeyForSquad,
+  getInstructionsForMatch,
+  getSquadForOwner,
+  getSquadForTransaction,
+} from './squads'
 
-export const getMatches: (
-  connection: Connection,
-  wallet: WalletContextState,
-  onlyYourMatches?: boolean
-) => Promise<Match[]> = async (
-  connection: Connection,
-  wallet: WalletContextState,
+export const getMatches: (onlyYourMatches?: boolean) => Promise<Match[]> = async (
   onlyYourMatches = false
 ) => {
-  const promiseSDK = promiseInstance(connection, wallet)
-  const network = await getNetwork(promiseSDK)
-  let promises: PromiseProtocol[]
+  const promiseSDK = getPromiseSDK()
+  const promisor = await getPromisor()
+  let promises: PromiseProtocol[] = []
   if (onlyYourMatches) {
-    const promisor = await getPromisor(promiseSDK, wallet, network)
-    promises = await promiseSDK.getPromises({
-      field: PromiseField.promisor,
-      value: promisor.address.toBase58(),
-    })
+    if (promisor) {
+      promises = await promiseSDK.getPromises({
+        field: PromiseField.promisor,
+        value: promisor.address.toBase58(),
+      })
+    }
   } else {
+    const network = await getNetwork()
     promises = await promiseSDK.getPromises({
       field: PromiseField.network,
       value: network.address.toBase58(),
     })
   }
 
-  return promises.map((promise) => {
-    return {
-      id: promise.id,
-      address: promise.address.toBase58(),
-      state: promise.state,
-      promiseeWager:
-        promise.promiseeRuleset.solWager != null
-          ? Number(promise.promiseeRuleset.solWager.lamports) / LAMPORTS_PER_SOL
-          : null,
-      endDate:
-        promise.promiseeRuleset.endDate != null
-          ? new Date(Number(promise.promiseeRuleset.endDate.date))
-          : null,
-      createdAt: promise.createdAt,
-      updatedAt: promise.updatedAt,
-      numberOfPromisees: promise.numberOfPromisees,
-    }
-  })
+  return promises.map((promise) => matchFromPromise(promise, promisor))
 }
 
-export const createMatch: (
-  connection: Connection,
-  wallet: WalletContextState,
-  matchDetails: MatchDetails
-) => Promise<Match> = async (
-  connection: Connection,
-  wallet: WalletContextState,
+export const createMatch: (matchDetails: MatchDetails) => Promise<Match> = async (
   matchDetails: MatchDetails
 ) => {
-  const promiseSDK = promiseInstance(connection, wallet)
-  const network = await getNetwork(promiseSDK)
-  const promisor = await getPromisor(promiseSDK, wallet, network)
+  const promiseSDK = getPromiseSDK()
+  const promisor = await getPromisorOrCreate()
   const promisorRuleset = new PromisorRuleset()
-  const promiseeRuleset = new PromiseeRuleset(
-    matchDetails.endDate != null && matchDetails.endDate > new Date()
-      ? new RulesetDate(matchDetails.endDate.getTime())
-      : null,
-    new SolGate(matchDetails.amountInLamports)
-  )
+  const promiseeRuleset = matchDetails.toRuleset()
   const promise = await promiseSDK.createPromise(promisor, promisorRuleset, promiseeRuleset)
   const activatedPromise = await promiseSDK.activatePromise(promise)
-  return {
-    id: activatedPromise.id,
-    address: activatedPromise.address.toBase58(),
-    state: activatedPromise.state,
-    promiseeWager:
-      activatedPromise.promiseeRuleset.solWager != null
-        ? Number(activatedPromise.promiseeRuleset.solWager.lamports) / LAMPORTS_PER_SOL
-        : null,
-    endDate:
-      activatedPromise.promiseeRuleset.endDate != null
-        ? new Date(Number(activatedPromise.promiseeRuleset.endDate.date))
-        : null,
-    createdAt: activatedPromise.createdAt,
-    updatedAt: activatedPromise.updatedAt,
-    numberOfPromisees: activatedPromise.numberOfPromisees,
-  }
+  return matchFromPromise(activatedPromise, promisor)
 }
 
-export const acceptMatchForSquad: (
-  connection: Connection,
-  wallet: WalletContextState,
-  match: Match,
-  squad: Squad
-) => Promise<SquadExecutionStatus> = async (
-  connection: Connection,
-  wallet: WalletContextState,
+export const acceptMatch: (match: Match, squad: Squad) => Promise<SquadExecutionStatus> = async (
   match: Match,
   squad: Squad
 ) => {
-  const promiseSDK = promiseInstance(connection, wallet)
+  const promiseSDK = getPromiseSDK()
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
-  const owner = getAuthorityKeyForSquad(wallet, squad.address)
+  const owner = getAuthorityKeyForSquad(squad.address)
   const instruction = await promiseSDK.buildAcceptPromise(promise, owner)
-  return await executeInstructionForSquad(wallet, squad, instruction)
+  return await executeInstructionForSquad(squad, instruction)
 }
 
-export const getSquadsForMatch: (
-  connection: Connection,
-  wallet: WalletContextState,
-  match: Match
-) => Promise<Squad[]> = async (
-  connection: Connection,
-  wallet: WalletContextState,
+export const getParticipantsForMatch: (match: Match) => Promise<string[]> = async (
   match: Match
 ) => {
-  const promiseSDK = promiseInstance(connection, wallet)
+  const promiseSDK = getPromiseSDK()
   const promisees = await promiseSDK.getPromisees({
     field: PromiseeField.promise,
     value: match.address,
   })
+
+  return promisees.map((promisee) => promisee.address.toBase58())
+}
+
+export const getSquadForParticipant: (address: string) => Promise<Squad> = async (
+  address: string
+) => {
+  const promiseSDK = getPromiseSDK()
+  const promisee = await promiseSDK.getPromisee(new PublicKey(address))
+  if (!promisee) return
+
+  return await getSquadForOwner(promisee.owner)
+}
+
+export const getSquadsForMatch: (match: Match) => Promise<Squad[]> = async (match: Match) => {
+  const promiseSDK = getPromiseSDK()
+  const promisees = await promiseSDK.getPromisees({
+    field: PromiseeField.promise,
+    value: match.address,
+  })
+
   const filteredPromisees = await Promise.all(
-    promisees.map((promisee) => getSquadForOwner(connection, wallet, promisee.owner))
+    promisees.map((promisee) => getSquadForOwner(promisee.owner))
   )
 
   return filteredPromisees.filter((x) => x !== undefined)
 }
 
-export const completeMatchForSquad: (
-  connection: Connection,
-  wallet: WalletContextState,
-  match: Match,
-  squad: Squad
-) => Promise<boolean> = async (
-  connection: Connection,
-  wallet: WalletContextState,
+export const completeMatch: (match: Match, squad: Squad) => Promise<boolean> = async (
   match: Match,
   squad: Squad
 ) => {
-  const promiseSDK = promiseInstance(connection, wallet)
+  const promiseSDK = getPromiseSDK()
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
-  const owner = getAuthorityKeyForSquad(wallet, squad.address)
+  const owner = getAuthorityKeyForSquad(squad.address)
   const promisees = await promiseSDK.getPromisees({
     field: PromiseeField.owner,
     value: owner.toBase58(),
   })
-  if (!promisees || promisees.length <= 0) {
+
+  const promisee = promisees.find(
+    (promisee) => promisee.promise.toBase58() == promise.address.toBase58()
+  )
+  if (!promisee) {
     return false
   }
 
-  await promiseSDK.completePromise(promise, promisees[0])
+  await promiseSDK.completePromise(promise, promisee)
   return true
 }
 
-const getNetwork = async (promiseSDK: PromiseSDK) => {
+const getPromiseSDK = () => {
+  const connection = getConnection()
+  const wallet = getWallet()
+
+  return promiseInstance(connection, wallet)
+}
+
+const getNetwork = async () => {
+  const promiseSDK = getPromiseSDK()
   return await promiseSDK.getNetwork(promiseNetworkPublicKey)
 }
 
-const getPromisorForOwner = async (promiseSDK: PromiseSDK, owner: PublicKey, network: Network) => {
+const getPromisor = async () => {
+  const wallet = getWallet()
+  const promiseSDK = getPromiseSDK()
   const promisors = await promiseSDK.getPromisors({
     field: PromisorField.owner,
-    value: owner.toBase58(),
+    value: wallet.publicKey.toBase58(),
   })
-  const promisor = promisors.find(
-    (promisor) => promisor.network.toBase58() == network.address.toBase58()
-  )
-  return promisor
+
+  return promisors.find((promisor) => promisor.network.toBase58() == promiseNetworkAddress)
 }
 
-const getPromisor = async (
-  promiseSDK: PromiseSDK,
-  wallet: WalletContextState,
-  network: Network
-) => {
-  const promisor = await getPromisorForOwner(promiseSDK, wallet.publicKey, network)
+const getPromisorOrCreate = async () => {
+  const promisor = await getPromisor()
   if (promisor) {
     return promisor
   }
 
-  return await createPromisor(promiseSDK, network)
+  return await createPromisor()
 }
 
-const createPromisor = async (promise: PromiseSDK, network: Network) => {
-  return await promise.createPromisor(network)
+const createPromisor = async () => {
+  const promiseSDK = getPromiseSDK()
+  const network = await getNetwork()
+  return await promiseSDK.createPromisor(network)
+}
+
+const matchFromPromise = (promise: PromiseProtocol, promisor?: Promisor) => {
+  const isOwner = promisor?.address?.toBase58() == promise.promisor.toBase58()
+  const ruleset = promise.promiseeRuleset
+  const promiseeWager = Number(ruleset.solWager?.lamports ?? 0) / LAMPORTS_PER_SOL
+  const endDate = ruleset.endDate != null ? new Date(Number(ruleset.endDate.date)) : null
+  return {
+    id: promise.id,
+    address: promise.address.toBase58(),
+    state: promise.state,
+    isOwner,
+    promiseeWager,
+    endDate,
+    createdAt: promise.createdAt,
+    createdBy: promise.promisor.toBase58(),
+    updatedAt: promise.updatedAt,
+    numberOfPromisees: promise.numberOfPromisees,
+  }
 }

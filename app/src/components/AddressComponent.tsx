@@ -7,9 +7,10 @@ import BaseButton from './BaseButton'
 
 type Props = {
   address: string
+  size?: string | number
 }
 
-export const AddressComponent = ({ address }: Props) => {
+export const AddressComponent = ({ address, size }: Props) => {
   const dispatch = useAppDispatch()
 
   const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
@@ -31,16 +32,18 @@ export const AddressComponent = ({ address }: Props) => {
 
   return (
     <>
-      <p>
+      <div>
         {truncate(address)}...&nbsp;
         <BaseButton
           onClick={() => copyText(address)}
           icon={mdiContentCopy}
+          iconSize={size}
           color="void"
           outline={false}
           small
+          border={false}
         />
-      </p>
+      </div>
     </>
   )
 }

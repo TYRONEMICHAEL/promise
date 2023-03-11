@@ -16,7 +16,7 @@ const UserCard = ({ avatar }: { avatar: UserAvatarType }) => {
   const [yourMatches, isLoadingMatches] = useMatches(true)
 
 
-  const username = getUsername(wallet.publicKey)
+  const username = wallet && wallet.publicKey ? getUsername(wallet.publicKey) : "Unknown"
 
   return (
     <CardBox flex="flex-row" className="items-center mt-20 lg:mt-0 flex-1">

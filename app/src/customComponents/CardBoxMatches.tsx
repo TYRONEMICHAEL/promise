@@ -14,15 +14,14 @@ const CardBoxSquad = () => {
   const icon = mdiTennisBall;
   const [amount, setAmount] = React.useState(0)
   const [yourMatches, isLoadingMatches] = useMatches(true)
-  const { connection } = useConnection();
 
   const getAmount = useCallback(async () => {
-    const balances = yourMatches.map(async (s) => await getBalanceForAccount(connection, new PublicKey(s.address)));
+    const balances = yourMatches.map(async (s) => await getBalanceForAccount(new PublicKey(s.address)));
     const amount = await Promise.all(balances).then((balances) => {
       return balances.reduce((a, b) => a + b, 0);
     });
     setAmount(amount);
-  }, [connection, yourMatches]);
+  }, [yourMatches]);
 
   useEffect(() => {
     getAmount();

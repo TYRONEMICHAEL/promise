@@ -23,7 +23,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (!wallet.publicKey) return
     setIsLoadingSol(true)
-    getWalletBalance(connection, wallet)
+    getWalletBalance()
       .then((balance) => {
         dispatch(setAccountInfo({ solBalance: balance }))
       })

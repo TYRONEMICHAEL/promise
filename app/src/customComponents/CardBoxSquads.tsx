@@ -12,18 +12,16 @@ import { getAuthorityKeyForSquad } from '../services/squads'
 
 const CardBoxSquad = () => {
   const icon = mdiAccountMultiple;
-  const wallet  = useWallet();
   const [amount, setAmount] = React.useState(0)
   const [squads, isLoadingMatches] = useSquads()
-  const { connection } = useConnection();
 
   const getAmount = useCallback(async () => {
-    const balances = squads.map(async (s) => await getBalanceForAccount(connection, getAuthorityKeyForSquad(wallet, s.address)));
+    const balances = squads.map(async (s) => await getBalanceForAccount(getAuthorityKeyForSquad(s.address)));
     const amount = await Promise.all(balances).then((balances) => {
       return balances.reduce((a, b) => a + b, 0);
     });
     setAmount(amount);
-  }, [connection, squads, wallet]);
+  }, [squads]);
 
   useEffect(() => {
     getAmount();
