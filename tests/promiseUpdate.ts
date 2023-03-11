@@ -828,6 +828,7 @@ describe("promise", () => {
     const promisorOwner = web3.Keypair.generate();
     const promiseeOwnerA = web3.Keypair.generate();
     const promiseeOwnerB = web3.Keypair.generate();
+    const wagerPayer = web3.Keypair.generate();
 
     const a1 = await connection.requestAirdrop(
       networkAuthority.publicKey,
@@ -848,6 +849,11 @@ describe("promise", () => {
       promiseeOwnerB.publicKey,
       LAMPORTS_PER_SOL
     );
+
+    const a5 = await connection.requestAirdrop(
+      wagerPayer.publicKey,
+      LAMPORTS_PER_SOL
+    ); 
 
     const latestBlockHash = await connection.getLatestBlockhash();
 
@@ -873,6 +879,12 @@ describe("promise", () => {
       blockhash: latestBlockHash.blockhash,
       lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
       signature: a4,
+    });
+
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: a5,
     });
 
     const [networkAccount, networkAccountBump] = await PublicKey.findProgramAddress(
@@ -974,7 +986,7 @@ describe("promise", () => {
       })
       .remainingAccounts([
         {
-          pubkey: promiseeOwnerA.publicKey,
+          pubkey: wagerPayer.publicKey,
           isWritable: true,
           isSigner: true,
         },
@@ -984,7 +996,7 @@ describe("promise", () => {
           isSigner: false,
         }
       ])
-      .signers([promiseeOwnerA])
+      .signers([promiseeOwnerA, wagerPayer])
       .rpc();
 
       const [promiseeAccountB, promiseeAccountBumpB] = await PublicKey.findProgramAddress(

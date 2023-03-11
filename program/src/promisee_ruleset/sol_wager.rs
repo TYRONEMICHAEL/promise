@@ -24,14 +24,14 @@ impl Condition for SolWager {
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
         let index = evaluation_context.account_cursor;
-        let promisee_owner = try_get_account_info::<AccountInfo>(&remaining_accounts, index)?;
+        let payer = try_get_account_info::<AccountInfo>(&remaining_accounts, index)?;
         let system_account = try_get_account_info::<AccountInfo>(&remaining_accounts, index + 1)?;
-        assert_keys_equal(&promisee.owner.key(), &promisee_owner.key())?;
+        
         assert_keys_equal(&system_program::id(), &system_account.key())?;
 
         evaluation_context
             .indices
-            .insert("promisee_owner", index);
+            .insert("payer", index);
 
         evaluation_context
             .indices
@@ -40,11 +40,11 @@ impl Condition for SolWager {
         evaluation_context.indices.insert(&"system_program", index + 1);
         evaluation_context.account_cursor += 2;
 
-        if promisee_owner.lamports() < self.lamports {
+        if payer.lamports() < self.lamports {
             msg!(
                 "Require {} lamports, accounts has {} lamports",
                 self.lamports,
-                promisee_owner.lamports(),
+                payer.lamports(),
             );
             return err!(PromiseError::NotEnoughSOL);
         }
@@ -53,28 +53,26 @@ impl Condition for SolWager {
 
     fn pre_action<'c, 'info>(
         &self,
-        promisee: &Account<Promisee>,
+        _promisee: &Account<Promisee>,
         promise: &Account<'info, Promise>,
         remaining_accounts: &'c [AccountInfo<'info>],
         evaluation_context: &mut EvaluationContext,
     ) -> Result<()> {
-        let promise_owner_i = evaluation_context.indices["promisee_owner"];
+        let payer_i = evaluation_context.indices["payer"];
         let system_program_i = evaluation_context.indices["system_program"];
-        let promisee_owner = try_get_account_info::<AccountInfo>(&remaining_accounts, promise_owner_i)?;
+        let payer = try_get_account_info::<AccountInfo>(&remaining_accounts, payer_i)?;
         let system_account = try_get_account_info::<AccountInfo>(&remaining_accounts, system_program_i)?;
-
-        assert_keys_equal(&promisee.owner.key(), &promisee_owner.key())?;
 
         msg!("Transferring {} lamports to {}", self.lamports, promise.key());
 
         invoke(
             &system_instruction::transfer(
-                &promisee_owner.key(),
+                &payer.key(),
                 &promise.key(),
                 self.lamports,
             ),
             &[
-                promisee_owner.to_account_info(),
+                payer.to_account_info(),
                 promise.to_account_info(),
                 system_account.to_account_info(),
             ],
