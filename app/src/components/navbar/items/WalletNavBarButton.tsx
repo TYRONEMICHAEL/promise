@@ -1,20 +1,25 @@
-import { mdiLoading, mdiOpenInNew, mdiWallet } from '@mdi/js'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { mdiLoading, mdiWallet } from '@mdi/js'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
-import BaseButton from '../../BaseButton'
 import { useEffect } from 'react'
 import { useAppDispatch } from '../../../stores/hooks'
 import { setConnected } from '../../../stores/mainSlice'
 import { getWalletPublicKey } from '../../../utils/wallet'
+import BaseButton from '../../BaseButton'
+import { setConnection, setWallet } from '../../../services/account'
 
 export default function WalletNavBarButton() {
   const dispatch = useAppDispatch()
   const wallet = useWallet()
+  const { connection } = useConnection()
   const { setVisible } = useWalletModal()
 
   useEffect(() => {
     dispatch(setConnected({ isConnected: wallet.connected }))
-  }, [dispatch, wallet])
+
+    setConnection(connection)
+    setWallet(wallet)
+  }, [dispatch, wallet, connection])
 
   const connect = () => {
     setVisible(true)

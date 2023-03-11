@@ -19,6 +19,7 @@ type Props = {
   active?: boolean
   disabled?: boolean
   roundedFull?: boolean
+  border?: boolean
   onClick?: (e: React.MouseEvent) => void
 }
 
@@ -37,6 +38,7 @@ export default function BaseButton({
   active = false,
   disabled = false,
   roundedFull = false,
+  border = true,
   onClick,
 }: Props) {
   const componentClass = [
@@ -48,7 +50,7 @@ export default function BaseButton({
     'transition-colors',
     'focus:ring',
     'duration-150',
-    'border',
+    border ? 'border' : '',
     disabled ? 'cursor-not-allowed' : 'cursor-pointer',
     roundedFull ? 'rounded-full' : 'rounded',
     getButtonColor(color, outline, !disabled, active),

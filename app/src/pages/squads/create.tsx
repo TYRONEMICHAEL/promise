@@ -1,5 +1,4 @@
 import { mdiBallotOutline, mdiWallet } from '@mdi/js'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
@@ -26,7 +25,6 @@ import { pushMessage } from '../../stores/snackBarSlice'
 const CreateSquad = () => {
   const dispatch = useAppDispatch()
   const router = useRouter()
-  const wallet = useWallet()
   const [isCreating, setIsCreating] = useState(false)
 
   const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
@@ -43,12 +41,13 @@ const CreateSquad = () => {
   const createSquadAction = async ({ partner, requireBothApproval }) => {
     const threshold = requireBothApproval ? 2 : 1
     setIsCreating(true)
-    createSquad(wallet, partner, threshold)
+    createSquad(partner, threshold)
       .then(() => {
         const message = createSnackbarMessage(`Successfully created squad`, true)
         dispatch(pushMessage(message))
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log(error)
         const message = createSnackbarMessage(`Failed to create squad`, false)
         dispatch(pushMessage(message))
       })

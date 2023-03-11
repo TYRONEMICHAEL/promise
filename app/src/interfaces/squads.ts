@@ -45,7 +45,8 @@ export type SquadTransaction = {
 
 export type SquadInstruction = {
     address: string
-    execute: boolean
+    transaction: string
+    executed: boolean
 }
 
 export const toSquadExecutionStatus = (state) => {

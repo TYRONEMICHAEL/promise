@@ -1,34 +1,32 @@
 import { mdiBallotOutline, mdiCash } from '@mdi/js'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { ReactElement, useState } from 'react'
+import * as Yup from 'yup'
 import BaseButton from '../../components/BaseButton'
 import BaseButtons from '../../components/BaseButtons'
 import BaseDivider from '../../components/BaseDivider'
 import CardBox from '../../components/CardBox'
+import { DatePickerField } from '../../components/DatePickerField'
+import FormCheckRadio from '../../components/FormCheckRadio'
+import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
 import FormField from '../../components/FormField'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
 import { SnackBarPushedMessage } from '../../interfaces'
+import { MatchDetails } from '../../interfaces/matches'
 import LayoutApp from '../../layouts/App'
 import { createMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
-import { DatePickerField } from '../../components/DatePickerField'
-import * as Yup from 'yup'
-import FormCheckRadioGroup from '../../components/FormCheckRadioGroup'
-import FormCheckRadio from '../../components/FormCheckRadio'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 
 const CreateMatch = () => {
   const dispatch = useAppDispatch()
   const router = useRouter()
-  const { connection } = useConnection()
-  const wallet = useWallet()
   const [isCreating, setIsCreating] = useState(false)
 
   const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
@@ -44,10 +42,7 @@ const CreateMatch = () => {
 
   const createMatchAction = async ({ wager, hasEndDate, endDate }) => {
     setIsCreating(true)
-    createMatch(connection, wallet, {
-      amountInLamports: wager * LAMPORTS_PER_SOL,
-      endDate: hasEndDate ? new Date(endDate) : null,
-    })
+    createMatch(new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null))
       .then((match) => {
         const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
         dispatch(pushMessage(message))
@@ -69,7 +64,7 @@ const CreateMatch = () => {
   }
 
   const createSchema = Yup.object().shape({
-    wager: Yup.number().moreThan(0, 'Wager needs to be more than 0').required("Wager is required"),
+    wager: Yup.number().moreThan(0, 'Wager needs to be more than 0').required('Wager is required'),
   })
 
   return (
@@ -109,7 +104,7 @@ const CreateMatch = () => {
 
                 {values.hasEndDate && (
                   <FormField help="Date the match ends.">
-                    <DatePickerField name="endDate" dateFormat="dd/mm/yyyy" />
+                    <DatePickerField name="endDate" />
                   </FormField>
                 )}
 

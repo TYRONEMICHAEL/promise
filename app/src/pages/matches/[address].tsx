@@ -1,5 +1,4 @@
 import { mdiAccountMultiple, mdiCheck, mdiTableTennis } from '@mdi/js'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -20,17 +19,11 @@ import { useSquads } from '../../hooks/squads'
 import { SnackBarPushedMessage } from '../../interfaces'
 import { stateToString } from '../../interfaces/matches'
 import LayoutApp from '../../layouts/App'
-import {
-  acceptMatchForSquad,
-  completeMatchForSquad,
-  getSquadsForMatch,
-} from '../../services/matches'
+import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
 import { nothing, truncate } from '../../utils/helpers'
 
 const MatchDetails = () => {
   const router = useRouter()
-  const { connection } = useConnection()
-  const wallet = useWallet()
   const [isAccepting, setIsAccepting] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
   const [squadsInMatch, setSquadsInMatch] = useState([])
@@ -40,27 +33,27 @@ const MatchDetails = () => {
 
   const { address } = router.query
   const match = matches.find((match) => match.address == address)
-  const isOwner = match?.state == PromiseState.active // TODO
+  const isOwner = match?.state == PromiseState.active && match?.isOwner
   const squadsNotInMatch = squads.filter(
     (squad) => !squadsInMatch.map((squad) => squad.address).includes(squad.address)
   )
 
   useEffect(() => {
-    if (match && wallet?.publicKey) {
+    if (match) {
       setIsAccepting(true)
-      getSquadsForMatch(connection, wallet, match)
+      getSquadsForMatch(match)
         .then((squads) => setSquadsInMatch(squads))
         .finally(() => {
           setIsAccepting(false)
         })
     }
-  }, [connection, wallet, match, setIsAccepting, setSquadsInMatch])
+  }, [match, setIsAccepting, setSquadsInMatch])
 
-  const acceptMatch = async ({ squad }) => {
+  const acceptMatchAction = async ({ squad }) => {
     const selected = squads.find((sq) => sq.address == squad)
     if (selected == undefined) return
     setIsAccepting(true)
-    acceptMatchForSquad(connection, wallet, match, selected)
+    acceptMatch(match, selected)
       .then(() => {
         router.reload()
       })
@@ -70,9 +63,9 @@ const MatchDetails = () => {
       })
   }
 
-  const completeMatch = async (squad) => {
+  const completeMatchAction = async (squad) => {
     setIsCompleting(true)
-    completeMatchForSquad(connection, wallet, match, squad)
+    completeMatch(match, squad)
       .then(() => {
         router.reload()
       })
@@ -184,7 +177,7 @@ const MatchDetails = () => {
                         {isCompleting && isOwner && <LoadingIndicator />}
                         {!isCompleting && isOwner && (
                           <BaseButton
-                            onClick={() => completeMatch(squad)}
+                            onClick={() => completeMatchAction(squad)}
                             label="Complete"
                             icon={mdiCheck}
                             color="contrast"
@@ -212,7 +205,7 @@ const MatchDetails = () => {
                     initialValues={{
                       squad: squadsNotInMatch[0],
                     }}
-                    onSubmit={(values) => acceptMatch(values)}
+                    onSubmit={(values) => acceptMatchAction(values)}
                   >
                     <Form>
                       <FormField label="Add Squad" labelFor="squad">
