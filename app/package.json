@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",
+    "@identity.com/sol-did-client": "3.1.2",
     "@mdi/js": "^7.0.96",
     "@reduxjs/toolkit": "^1.8.5",
     "@solana/wallet-adapter-base": "^0.9.21",

@@ -1,4 +1,6 @@
+import { BitwiseVerificationMethodFlag, DidSolIdentifier, DidSolService, VerificationMethodType } from '@identity.com/sol-did-client'
 import { mdiBallotOutline, mdiWallet } from '@mdi/js'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
@@ -17,6 +19,7 @@ import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
 import { SnackBarPushedMessage } from '../../interfaces'
+import { Squad } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
 import { createSquad } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
@@ -26,6 +29,8 @@ const CreateSquad = () => {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const [isCreating, setIsCreating] = useState(false)
+  const wallet = useWallet()
+  const { connection } = useConnection()
 
   const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
     message: string,
@@ -38,16 +43,37 @@ const CreateSquad = () => {
     }
   }
 
+  const addSquadToDid = async (squad?: Squad) => {
+    const didSolIdentifier = DidSolIdentifier.create(wallet.publicKey, 'devnet');
+    const service = DidSolService.build(
+      didSolIdentifier,
+      {
+        connection,
+      }
+    );
+
+    await service
+      .addVerificationMethod({
+        fragment: "squad",
+        keyData: Buffer.from(new PublicKey(squad?.address).toBytes()),
+        methodType: VerificationMethodType.Ed25519VerificationKey2018,
+        flags: [BitwiseVerificationMethodFlag.CapabilityDelegation],
+      }, wallet.publicKey)
+      .withAutomaticAlloc(wallet.publicKey)
+      .withSolWallet(wallet)
+      .rpc();
+  }
+
   const createSquadAction = async ({ partner, requireBothApproval }) => {
     const threshold = requireBothApproval ? 2 : 1
     setIsCreating(true)
     createSquad(partner, threshold)
+      .then(addSquadToDid)
       .then(() => {
         const message = createSnackbarMessage(`Successfully created squad`, true)
         dispatch(pushMessage(message))
       })
       .catch((error) => {
-        console.log(error)
         const message = createSnackbarMessage(`Failed to create squad`, false)
         dispatch(pushMessage(message))
       })
