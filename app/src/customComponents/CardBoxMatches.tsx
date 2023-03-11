@@ -1,5 +1,4 @@
-import { mdiTennisBall, mdiTennis } from '@mdi/js'
-import { useConnection } from '@solana/wallet-adapter-react'
+import { mdiTennis, mdiTennisBall } from '@mdi/js'
 import { PublicKey } from '@solana/web3.js'
 import React, { useCallback, useEffect } from 'react'
 import BaseButton from '../components/BaseButton'

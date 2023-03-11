@@ -30,11 +30,7 @@ describe("PromiseSDK", () => {
 
   before(async () => {
     authority = Keypair.generate();
-    promise = new PromiseSDK(
-      new Connection("http://127.0.0.1:8899"),
-      new NodeWallet(authority),
-      new PublicKey("EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A")
-    );
+    promise = PromiseSDK.localnet(new NodeWallet(authority));
     await topUpAccount(authority);
   });
 

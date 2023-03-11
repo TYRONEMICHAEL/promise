@@ -6,10 +6,7 @@ const { NetworkRuleset } = require("../lib/sdk/src/network/NetworkRuleset");
 const main = async () => {
   console.log("Creating Network...");
   const authority = Keypair.generate();
-  const promise = new PromiseSDK(
-    new Connection("http://127.0.0.1:8899"),
-    new NodeWallet.default(authority)
-  );
+  const promise = PromiseSDK.localnet(new NodeWallet.default(authority));
 
   const connection = new Connection("http://127.0.0.1:8899");
   const airdropSignature = await connection.requestAirdrop(

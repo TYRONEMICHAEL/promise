@@ -39,7 +39,7 @@ const SquadDetails = () => {
 
   const approveTransaction = async (transaction) => {
     setIsAccepting(true)
-    approveTransactionForSquad(transaction)
+    approveTransactionForSquad(squad, transaction)
       .then(() => {
         router.reload()
         dispatch(pushMessage(createSnackbarMessage('Successfully approved match', true)))

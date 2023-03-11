@@ -16,7 +16,6 @@ import SectionTitleLineWithButton from '../../components/SectionTitleLineWithBut
 import { getPageTitle } from '../../config'
 import { useMatches } from '../../hooks/matches'
 import { useSquads } from '../../hooks/squads'
-import { SnackBarPushedMessage } from '../../interfaces'
 import { stateToString } from '../../interfaces/matches'
 import LayoutApp from '../../layouts/App'
 import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
@@ -73,17 +72,6 @@ const MatchDetails = () => {
       .finally(() => {
         setIsCompleting(false)
       })
-  }
-
-  const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
-    message: string,
-    success: boolean
-  ) => {
-    return {
-      text: message,
-      lifetime: 3000,
-      color: success ? 'success' : 'danger',
-    }
   }
 
   return (

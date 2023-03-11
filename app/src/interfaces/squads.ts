@@ -8,7 +8,7 @@ export type Squad = {
   createKey: string
   numberOfApprovers: number
   status: SquadStatus
-  waitingTransactions: SquadTransaction[] 
+  waitingTransactions: SquadTransaction[]
 }
 
 export enum SquadStatus {
@@ -44,9 +44,9 @@ export type SquadTransaction = {
 }
 
 export type SquadInstruction = {
-    address: string
-    transaction: string
-    executed: boolean
+  address: string
+  transaction: string
+  executed: boolean
 }
 
 export const toSquadExecutionStatus = (state) => {

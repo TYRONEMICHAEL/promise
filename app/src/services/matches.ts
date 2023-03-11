@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js'
 import { PromiseField } from 'promise-sdk/lib/sdk/src/promise/PromiseFilter'
 import { PromiseProtocol } from 'promise-sdk/lib/sdk/src/promise/PromiseProtocol'
 import { PromiseeField } from 'promise-sdk/lib/sdk/src/promisee/PromiseeFilter'
@@ -8,13 +8,14 @@ import { PromisorRuleset } from 'promise-sdk/lib/sdk/src/promisor/PromisorRulese
 import { promiseInstance, promiseNetworkAddress, promiseNetworkPublicKey } from '../env'
 import { Match, MatchDetails } from '../interfaces/matches'
 import { Squad, SquadExecutionStatus } from '../interfaces/squads'
+import { sendAndConfirm } from '../utils/helpers'
 import { getConnection, getWallet } from './account'
 import {
   executeInstructionForSquad,
+  executeTransactionInstruction,
   getAuthorityKeyForSquad,
-  getInstructionsForMatch,
+  getInstructionsForExecutingInstruction,
   getSquadForOwner,
-  getSquadForTransaction,
 } from './squads'
 
 export const getMatches: (onlyYourMatches?: boolean) => Promise<Match[]> = async (
@@ -41,16 +42,76 @@ export const getMatches: (onlyYourMatches?: boolean) => Promise<Match[]> = async
   return promises.map((promise) => matchFromPromise(promise, promisor))
 }
 
-export const createMatch: (matchDetails: MatchDetails) => Promise<Match> = async (
-  matchDetails: MatchDetails
+export const createMatch: (matchDetails: MatchDetails, squad?: Squad) => Promise<Match> = async (
+  matchDetails: MatchDetails,
+  squad?: Squad
 ) => {
+  const wallet = getWallet()
   const promiseSDK = getPromiseSDK()
-  const promisor = await getPromisorOrCreate()
   const promisorRuleset = new PromisorRuleset()
   const promiseeRuleset = matchDetails.toRuleset()
-  const promise = await promiseSDK.createPromise(promisor, promisorRuleset, promiseeRuleset)
-  const activatedPromise = await promiseSDK.activatePromise(promise)
-  return matchFromPromise(activatedPromise, promisor)
+  const promisor = await getPromisor()
+  const instructions: TransactionInstruction[] = []
+  let promisorPDA: PublicKey = promisor?.address
+  let promisePDA: PublicKey = null
+  if (promisor) {
+    promisePDA = promiseSDK.getPromisePDA(
+      promiseNetworkPublicKey,
+      promisor.address,
+      promisor.numberOfPromises + 1
+    )[0]
+    instructions.push(
+      await promiseSDK.buildCreatePromise(
+        promisor.address,
+        promiseNetworkPublicKey,
+        promisor.numberOfPromises + 1,
+        promisorRuleset,
+        promiseeRuleset,
+        wallet.publicKey
+      )
+    )
+    instructions.push(
+      await promiseSDK.buildActivatePromise(promisePDA, promisor.address, wallet.publicKey)
+    )
+  } else {
+    promisorPDA = promiseSDK.getPromisorPDA(promiseNetworkPublicKey, wallet.publicKey)[0]
+    promisePDA = promiseSDK.getPromisePDA(promiseNetworkPublicKey, promisorPDA, 1)[0]
+    instructions.push(await buildCreatePromisor())
+    instructions.push(
+      await promiseSDK.buildCreatePromise(
+        promisorPDA,
+        promiseNetworkPublicKey,
+        1,
+        promisorRuleset,
+        promiseeRuleset,
+        wallet.publicKey
+      )
+    )
+    instructions.push(
+      await promiseSDK.buildActivatePromise(promisePDA, promisorPDA, wallet.publicKey)
+    )
+  }
+
+  let transactionPDA: PublicKey = null
+  if (squad) {
+    const owner = getAuthorityKeyForSquad(squad.address)
+    const instruction = await promiseSDK.buildAcceptPromise(promisePDA, owner)
+    const [txPDA, acceptInstructions] = await getInstructionsForExecutingInstruction(
+      squad,
+      instruction
+    )
+    instructions.push(...acceptInstructions)
+    transactionPDA = txPDA
+  }
+
+  await sendAndConfirm(instructions)
+
+  if (squad && transactionPDA) {
+    await executeTransactionInstruction(transactionPDA)
+  }
+
+  const promise = await promiseSDK.getPromise(promisePDA)
+  return matchFromPromise(promise, promisor)
 }
 
 export const acceptMatch: (match: Match, squad: Squad) => Promise<SquadExecutionStatus> = async (
@@ -58,7 +119,7 @@ export const acceptMatch: (match: Match, squad: Squad) => Promise<SquadExecution
   squad: Squad
 ) => {
   const promiseSDK = getPromiseSDK()
-  const promise = await promiseSDK.getPromise(new PublicKey(match.address))
+  const promise = new PublicKey(match.address)
   const owner = getAuthorityKeyForSquad(squad.address)
   const instruction = await promiseSDK.buildAcceptPromise(promise, owner)
   return await executeInstructionForSquad(squad, instruction)
@@ -146,19 +207,10 @@ const getPromisor = async () => {
   return promisors.find((promisor) => promisor.network.toBase58() == promiseNetworkAddress)
 }
 
-const getPromisorOrCreate = async () => {
-  const promisor = await getPromisor()
-  if (promisor) {
-    return promisor
-  }
-
-  return await createPromisor()
-}
-
-const createPromisor = async () => {
+const buildCreatePromisor = async () => {
+  const wallet = getWallet()
   const promiseSDK = getPromiseSDK()
-  const network = await getNetwork()
-  return await promiseSDK.createPromisor(network)
+  return await promiseSDK.buildCreatePromisor(promiseNetworkPublicKey, wallet.publicKey)
 }
 
 const matchFromPromise = (promise: PromiseProtocol, promisor?: Promisor) => {

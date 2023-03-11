@@ -8,7 +8,7 @@ import {
   PublicKey,
   SystemProgram,
   TransactionInstruction,
-  clusterApiUrl
+  clusterApiUrl,
 } from "@solana/web3.js";
 import { Promise as PromiseAccount } from "../../target/types/promise";
 import { IDL } from "./idl/promise";
@@ -102,6 +102,11 @@ export class PromiseSDK {
    * =========================
    */
 
+  public getNetworkPDA(owner: PublicKey): [PublicKey, number] {
+    const seeds = createNetworkSeeds(owner);
+    return PublicKey.findProgramAddressSync(seeds, this.getProgramId());
+  }
+
   /**
    * Gets the specified Network using the public address.
    * @param pubKey Public key of the Network account.
@@ -174,11 +179,7 @@ export class PromiseSDK {
     owner: PublicKey
   ): [PromiseMethods, PublicKey] {
     const data = ruleset.toData() as Buffer;
-    const seeds = createNetworkSeeds(owner);
-    const [networkAccount, networkBump] = PublicKey.findProgramAddressSync(
-      seeds,
-      this.getProgramId()
-    );
+    const [networkAccount, networkBump] = this.getNetworkPDA(owner);
     return [
       this.program.methods.initializeNetwork(data, networkBump).accounts({
         promiseNetwork: networkAccount,
@@ -199,7 +200,7 @@ export class PromiseSDK {
     ruleset: NetworkRuleset
   ): Promise<Network> {
     const signature = await this._buildUpdateNetwork(
-      network,
+      network.address,
       ruleset,
       this.wallet.publicKey
     ).rpc();
@@ -220,7 +221,7 @@ export class PromiseSDK {
    * @returns Instruction that updates the Network.
    */
   public async buildUpdateNetwork(
-    network: Network,
+    network: PublicKey,
     ruleset: NetworkRuleset,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
@@ -232,14 +233,14 @@ export class PromiseSDK {
   }
 
   private _buildUpdateNetwork(
-    network: Network,
+    network: PublicKey,
     ruleset: NetworkRuleset,
     owner: PublicKey
   ): PromiseMethods {
     const data = ruleset.toData();
 
     return this.program.methods.updateNetwork(data).accounts({
-      promiseNetwork: network.address,
+      promiseNetwork: network,
       authority: owner,
     });
   }
@@ -249,6 +250,14 @@ export class PromiseSDK {
    * PROMISORS
    * =========================
    */
+
+  public getPromisorPDA(
+    network: PublicKey,
+    owner: PublicKey
+  ): [PublicKey, number] {
+    const seeds = createPromisorSeeds(network, owner);
+    return PublicKey.findProgramAddressSync(seeds, this.getProgramId());
+  }
 
   /**
    * Gets the specified Promisor using the public address.
@@ -263,7 +272,7 @@ export class PromiseSDK {
       network: promisor.promiseNetwork,
       state: toPromisorState(promisor.state),
       numberOfPromises: promisor.numPromises,
-      updatedAt: new Date(promisor.updatedAt.toNumber()),
+      updatedAt: new Date(promisor.updatedAt.toNumber() * 1000),
     };
   }
 
@@ -282,7 +291,7 @@ export class PromiseSDK {
         network: promisor.account.promiseNetwork,
         state: toPromisorState(promisor.account.state),
         numberOfPromises: promisor.account.numPromises,
-        updatedAt: new Date(promisor.account.updatedAt.toNumber()),
+        updatedAt: new Date(promisor.account.updatedAt.toNumber() * 1000),
       };
     });
   }
@@ -294,7 +303,7 @@ export class PromiseSDK {
    */
   public async createPromisor(network: Network): Promise<Promisor> {
     const [method, promisorAccount] = this._buildCreatePromisor(
-      network,
+      network.address,
       this.wallet.publicKey
     );
 
@@ -314,28 +323,22 @@ export class PromiseSDK {
    * @returns An instruction that creates a Promisor.
    */
   public async buildCreatePromisor(
-    network: Network,
+    network: PublicKey,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
     return await this._buildCreatePromisor(network, owner)[0].instruction();
   }
 
   private _buildCreatePromisor(
-    network: Network,
+    network: PublicKey,
     owner: PublicKey
   ): [PromiseMethods, PublicKey] {
-    const seeds = createPromisorSeeds(network.address, owner);
-
-    const [promisorAccount, promisorBump] = PublicKey.findProgramAddressSync(
-      seeds,
-      this.getProgramId()
-    );
-
+    const [promisorAccount, promisorBump] = this.getPromisorPDA(network, owner);
     return [
       this.program.methods.initializePromisor(promisorBump).accounts({
         promisor: promisorAccount,
         owner: owner,
-        promiseNetwork: network.address,
+        promiseNetwork: network,
       }),
       promisorAccount,
     ];
@@ -352,7 +355,8 @@ export class PromiseSDK {
     state: PromisorState
   ): Promise<Promisor> {
     const signature = await this._buildUpdatePromisor(
-      promisor,
+      promisor.address,
+      promisor.network,
       state,
       this.wallet.publicKey
     ).rpc();
@@ -373,28 +377,31 @@ export class PromiseSDK {
    * @returns An instruction that updates the Promisor.
    */
   public async buildUpdatePromisor(
-    promisor: Promisor,
+    promisor: PublicKey,
+    network: PublicKey,
     state: PromisorState,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
     return await this._buildUpdatePromisor(
       promisor,
+      network,
       state,
       owner
     ).instruction();
   }
 
   private _buildUpdatePromisor(
-    promisor: Promisor,
+    promisor: PublicKey,
+    network: PublicKey,
     state: PromisorState,
     owner: PublicKey
   ): PromiseMethods {
     return this.program.methods
       .updatePromisor(fromPromisorState(state))
       .accounts({
-        promisor: promisor.address,
+        promisor: promisor,
         owner: owner,
-        promiseNetwork: promisor.network,
+        promiseNetwork: network,
         authority: owner,
       });
   }
@@ -404,6 +411,15 @@ export class PromiseSDK {
    * PROMISES
    * =========================
    */
+
+  public getPromisePDA(
+    network: PublicKey,
+    promisor: PublicKey,
+    id: number
+  ): [PublicKey, number] {
+    const seeds = createPromiseSeeds(network, promisor, id);
+    return PublicKey.findProgramAddressSync(seeds, this.getProgramId());
+  }
 
   /**
    * Gets the specified Promise using the public address.
@@ -422,8 +438,8 @@ export class PromiseSDK {
       state: toPromiseState(promise.state),
       promiseeRuleset: PromiseeRuleset.fromData(promise.promiseeData),
       promisorRuleset: PromisorRuleset.fromData(promise.promisorData),
-      createdAt: new Date(promise.createdAt.toNumber()),
-      updatedAt: new Date(promise.updatedAt.toNumber()),
+      createdAt: new Date(promise.createdAt.toNumber() * 1000),
+      updatedAt: new Date(promise.updatedAt.toNumber() * 1000),
       numberOfPromisees: promise.numPromisees,
     };
   }
@@ -445,8 +461,8 @@ export class PromiseSDK {
         state: toPromiseState(promise.account.state),
         promiseeRuleset: PromiseeRuleset.fromData(promise.account.promiseeData),
         promisorRuleset: PromisorRuleset.fromData(promise.account.promisorData),
-        createdAt: new Date(promise.account.createdAt.toNumber()),
-        updatedAt: new Date(promise.account.updatedAt.toNumber()),
+        createdAt: new Date(promise.account.createdAt.toNumber() * 1000),
+        updatedAt: new Date(promise.account.updatedAt.toNumber() * 1000),
         numberOfPromisees: promise.account.numPromisees,
       };
     });
@@ -465,7 +481,9 @@ export class PromiseSDK {
     promiseeRuleset: PromiseeRuleset
   ): Promise<PromiseProtocol> {
     const [method, promiseAccount] = this._buildCreatePromise(
-      promisor,
+      promisor.address,
+      promisor.network,
+      promisor.numberOfPromises + 1,
       promisorRuleset,
       promiseeRuleset,
       this.wallet.publicKey
@@ -483,19 +501,25 @@ export class PromiseSDK {
   /**
    * Builds an instruction that creates a Promise for the Promisor.
    * @param promisor Promisor that owns the Promise.
+   * @param network Network that the Promisor is on.
+   * @param id Unique id of the promise.
    * @param promisorRuleset Ruleset for the Promisor.
    * @param promiseeRuleset Ruleset for the Promisee.
    * @param owner Owner of the Promise/Promisor.
    * @returns An instruction that creates a Promise.
    */
   public async buildCreatePromise(
-    promisor: Promisor,
+    promisor: PublicKey,
+    network: PublicKey,
+    id: number,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
     return await this._buildCreatePromise(
       promisor,
+      network,
+      id,
       promisorRuleset,
       promiseeRuleset,
       owner
@@ -503,19 +527,19 @@ export class PromiseSDK {
   }
 
   private _buildCreatePromise(
-    promisor: Promisor,
+    promisor: PublicKey,
+    network: PublicKey,
+    id: number,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
     owner: PublicKey
   ): [PromiseMethods, PublicKey] {
-    const id = promisor.numberOfPromises + 1;
     const promisorData = promisorRuleset.toData();
     const promiseeData = promiseeRuleset.toData();
-    const seeds = createPromiseSeeds(promisor.network, promisor.address, id);
-
-    const [promiseAccount, promiseBump] = PublicKey.findProgramAddressSync(
-      seeds,
-      this.getProgramId()
+    const [promiseAccount, promiseBump] = this.getPromisePDA(
+      network,
+      promisor,
+      id
     );
 
     return [
@@ -523,8 +547,8 @@ export class PromiseSDK {
         .initializePromise(id, promisorData, promiseeData, promiseBump)
         .accounts({
           promise: promiseAccount,
-          promisor: promisor.address,
-          promiseNetwork: promisor.network,
+          promisor: promisor,
+          promiseNetwork: network,
           promisorOwner: owner,
         })
         .remainingAccounts([
@@ -551,7 +575,8 @@ export class PromiseSDK {
     promiseeRuleset: PromiseeRuleset
   ): Promise<PromiseProtocol> {
     const signature = await this._buildUpdatePromise(
-      promise,
+      promise.address,
+      promise.promisor,
       promisorRuleset,
       promiseeRuleset,
       this.wallet.publicKey
@@ -574,13 +599,15 @@ export class PromiseSDK {
    * @returns An instruction that updates a promise.
    */
   public async buildUpdatePromise(
-    promise: PromiseProtocol,
+    promise: PublicKey,
+    promisor: PublicKey,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
     return await this._buildUpdatePromise(
       promise,
+      promisor,
       promisorRuleset,
       promiseeRuleset,
       owner
@@ -588,7 +615,8 @@ export class PromiseSDK {
   }
 
   private _buildUpdatePromise(
-    promise: PromiseProtocol,
+    promise: PublicKey,
+    promisor: PublicKey,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
     owner: PublicKey
@@ -599,8 +627,8 @@ export class PromiseSDK {
     return this.program.methods
       .updatePromiseRules(promisorData, promiseeData)
       .accounts({
-        promise: promise.address,
-        promisor: promise.promisor,
+        promise: promise,
+        promisor: promisor,
         promisorOwner: owner,
       })
       .remainingAccounts([
@@ -621,7 +649,8 @@ export class PromiseSDK {
     promise: PromiseProtocol
   ): Promise<PromiseProtocol> {
     const signature = await this._buildActivatePromise(
-      promise,
+      promise.address,
+      promise.promisor,
       this.wallet.publicKey
     ).rpc();
 
@@ -640,21 +669,27 @@ export class PromiseSDK {
    * @returns An instruction that activates a Promise.
    */
   public async buildActivatePromise(
-    promise: PromiseProtocol,
+    promise: PublicKey,
+    promisor: PublicKey,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
-    return await this._buildActivatePromise(promise, owner).instruction();
+    return await this._buildActivatePromise(
+      promise,
+      promisor,
+      owner
+    ).instruction();
   }
 
   private _buildActivatePromise(
-    promise: PromiseProtocol,
+    promise: PublicKey,
+    promisor: PublicKey,
     owner: PublicKey
   ): PromiseMethods {
     return this.program.methods
       .updatePromiseActive()
       .accounts({
-        promise: promise.address,
-        promisor: promise.promisor,
+        promise: promise,
+        promisor: promisor,
         promisorOwner: owner,
       })
       .remainingAccounts([
@@ -678,7 +713,7 @@ export class PromiseSDK {
    */
   public async acceptPromise(promise: PromiseProtocol): Promise<Promisee> {
     const [method, promiseeAccount] = this._buildAcceptPromise(
-      promise,
+      promise.address,
       this.wallet.publicKey
     );
 
@@ -698,21 +733,17 @@ export class PromiseSDK {
    * @returns An instruction that creates a Promisee.
    */
   public async buildAcceptPromise(
-    promise: PromiseProtocol,
+    promise: PublicKey,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
     return await this._buildAcceptPromise(promise, owner)[0].instruction();
   }
 
   private _buildAcceptPromise(
-    promise: PromiseProtocol,
+    promise: PublicKey,
     owner: PublicKey
   ): [PromiseMethods, PublicKey] {
-    const seeds = createPromiseeSeeds(promise.address, owner);
-    const [promiseeAccount, promiseeBump] = PublicKey.findProgramAddressSync(
-      seeds,
-      this.getProgramId()
-    );
+    const [promiseeAccount, promiseeBump] = this.getPromiseePDA(promise, owner);
 
     return [
       this.program.methods
@@ -720,7 +751,7 @@ export class PromiseSDK {
         .accounts({
           promisee: promiseeAccount,
           promiseeOwner: owner,
-          promise: promise.address,
+          promise: promise,
         })
         .remainingAccounts([
           {
@@ -749,8 +780,10 @@ export class PromiseSDK {
     promisee: Promisee
   ): Promise<PromiseProtocol> {
     const signature = await this._buildCompletePromise(
-      promise,
-      promisee,
+      promise.address,
+      promise.promisor,
+      promisee.address,
+      promisee.owner,
       this.wallet.publicKey
     ).rpc();
 
@@ -770,33 +803,39 @@ export class PromiseSDK {
    * @returns An instruction that completes a Promise.
    */
   public async buildCompletePromise(
-    promise: PromiseProtocol,
-    promisee: Promisee,
+    promise: PublicKey,
+    promisor: PublicKey,
+    promisee: PublicKey,
+    promiseeOwner: PublicKey,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
     return await this._buildCompletePromise(
       promise,
+      promisor,
       promisee,
+      promiseeOwner,
       owner
     ).instruction();
   }
 
   private _buildCompletePromise(
-    promise: PromiseProtocol,
-    promisee: Promisee,
+    promise: PublicKey,
+    promisor: PublicKey,
+    promisee: PublicKey,
+    promiseeOwner: PublicKey,
     owner: PublicKey
   ): PromiseMethods {
     return this.program.methods
       .updatePromiseCompleted()
       .accounts({
-        promisee: promisee.address,
-        promisor: promise.promisor,
+        promisee: promisee,
+        promisor: promisor,
         promisorOwner: owner,
-        promise: promise.address,
+        promise: promise,
       })
       .remainingAccounts([
         {
-          pubkey: owner,
+          pubkey: promiseeOwner,
           isWritable: true,
           isSigner: false,
         },
@@ -814,6 +853,14 @@ export class PromiseSDK {
    * =========================
    */
 
+  public getPromiseePDA(
+    promise: PublicKey,
+    owner: PublicKey
+  ): [PublicKey, number] {
+    const seeds = createPromiseeSeeds(promise, owner);
+    return PublicKey.findProgramAddressSync(seeds, this.getProgramId());
+  }
+
   /**
    * Gets the specified Promisee using the public address.
    * @param pubKey Public key of the Promisee account.
@@ -825,8 +872,8 @@ export class PromiseSDK {
       address: pubKey,
       promise: promisee.promise,
       owner: promisee.owner,
-      createdAt: new Date(promisee.createdAt.toNumber()),
-      updatedAt: new Date(promisee.updatedAt.toNumber()),
+      createdAt: new Date(promisee.createdAt.toNumber() * 1000),
+      updatedAt: new Date(promisee.updatedAt.toNumber() * 1000),
       bump: promisee.bump,
     };
   }
@@ -844,8 +891,8 @@ export class PromiseSDK {
         address: promisee.publicKey,
         promise: promisee.account.promise,
         owner: promisee.account.owner,
-        createdAt: new Date(promisee.account.createdAt.toNumber()),
-        updatedAt: new Date(promisee.account.updatedAt.toNumber()),
+        createdAt: new Date(promisee.account.createdAt.toNumber() * 1000),
+        updatedAt: new Date(promisee.account.updatedAt.toNumber() * 1000),
         bump: promisee.account.bump,
       };
     });
