@@ -1,6 +1,7 @@
 {
   "private": true,
   "scripts": {
+    "install": "cd ../sdk && yarn install && yarn build && cd ../app",
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
