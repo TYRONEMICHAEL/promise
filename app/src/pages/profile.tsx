@@ -1,4 +1,4 @@
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiAccountMultiple } from '@mdi/js'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { ReactElement, useEffect, useState } from 'react'
 import SectionMain from '../components/SectionMain'
@@ -39,6 +39,23 @@ const ProfilePage = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
           <UserCard avatar={UserAvatarType.avatar} />
           <div className='flex-1'>
+            <CardBoxSquad />
+            <CardBoxMatches />
+            <CardBoxHistory />
+          </div>
+        </div>
+      </SectionMain>
+      <SectionMain>
+        
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+          <div className='flex-1'>
+            <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" main excludeButton />
+            <CardBoxSquad />
+            <CardBoxMatches />
+            <CardBoxHistory />
+          </div>
+          <div className='flex-1'>
+            <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" main excludeButton />
             <CardBoxSquad />
             <CardBoxMatches />
             <CardBoxHistory />
