@@ -1,10 +1,10 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cd ../sdk && npm run build && cd - && next dev",
     "build": "cd ../sdk && npm run build && cd - && next build",
     "export": "next export",
-    "start": "next start",
+    "start": "cd ../sdk && npm run build && cd - && next start",
     "lint": "next lint",
     "format": "prettier '{components,pages,src,interfaces,hooks}/**/*.{tsx,ts,js}' --write"
   },
