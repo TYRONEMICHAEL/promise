@@ -1,1 +1,12 @@
+!lib
+
+lib/*
+!lib/sdk/
+
+lib/sdk/*
+!lib/sdk/src/
+
+lib/sdk/src/*
+!lib/sdk/src/idl/
+
 node_modules
