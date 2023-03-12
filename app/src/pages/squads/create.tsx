@@ -48,10 +48,12 @@ const CreateSquad = () => {
   const addSquadToDid = async (squad?: Squad) => {
     const didSolIdentifier = DidSolIdentifier.create(wallet.publicKey, 'devnet');
     const service = await DidSolService.build(didSolIdentifier);
+    const sqauds = await getSquadsForWallet(wallet, connection);
+    const fragment = `squad-${sqauds.length + 1}`
 
     await service
       .addVerificationMethod({
-        fragment: "4",
+        fragment: fragment,
         keyData: Buffer.from((new PublicKey(squad.address)).toBytes()),
         methodType: VerificationMethodType.Ed25519VerificationKey2018,
         flags: [BitwiseVerificationMethodFlag.CapabilityInvocation],
@@ -62,13 +64,6 @@ const CreateSquad = () => {
   }
 
   const createSquadAction = async ({ partner, requireBothApproval }) => {
-    const t = await getSquadsForWallet(wallet, connection)
-    try {
-      console.log(t);
-    } catch(error) {
-      console.log(error);
-    }
-    
     const threshold = requireBothApproval ? 2 : 1
     setIsCreating(true)
     createSquad(partner, threshold)
