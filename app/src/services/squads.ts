@@ -1,5 +1,6 @@
 import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
-import { getMsPDA } from '@sqds/sdk'
+import { getMsPDA, getTxPDA } from '@sqds/sdk'
+import BN from 'bn.js'
 import { squadsInstance, squadsProgram } from '../env'
 import {
   Squad,
@@ -10,6 +11,7 @@ import {
   maxNumberOfMembersPerSquad,
   toSquadExecutionStatus,
 } from '../interfaces/squads'
+import { sendAndConfirm } from '../utils/helpers'
 import { getConnection, getWallet } from './account'
 
 export const getSquads: () => Promise<Squad[]> = async () => {
@@ -127,19 +129,21 @@ const getTransactionsForSquad: (
 }
 
 export const approveTransactionForSquad: (
+  squad: Squad,
   transaction: SquadTransaction
-) => Promise<SquadExecutionStatus> = async (transaction: SquadTransaction) => {
+) => Promise<SquadExecutionStatus> = async (squad: Squad, transaction: SquadTransaction) => {
   const squads = getSquadsSDK()
-  await squads.approveTransaction(transaction.publicKey)
+  const [msPDA] = getMsPDA(new PublicKey(squad.createKey), squads.multisigProgramId)
+  const instructions: TransactionInstruction[] = []
+  instructions.push(await squads.buildApproveTransaction(msPDA, transaction.publicKey))
 
-  transaction = await squads.getTransaction(transaction.publicKey)
-  const status = toSquadExecutionStatus(transaction.status)
-  if (status == SquadExecutionStatus.ready) {
-    await squads.executeTransaction(transaction.publicKey)
-    transaction = await squads.getTransaction(transaction.publicKey)
-    return toSquadExecutionStatus(transaction.status)
+  if (squad.numberOfApprovers >= transaction.approved.length + 1) {
+    instructions.push(await squads.buildExecuteTransaction(transaction.publicKey))
   }
 
+  await sendAndConfirm(instructions)
+  transaction = await squads.getTransaction(transaction.publicKey)
+  const status = toSquadExecutionStatus(transaction.status)
   return status
 }
 
@@ -147,18 +151,40 @@ export const executeInstructionForSquad: (
   squad: Squad,
   instruction: TransactionInstruction
 ) => Promise<SquadExecutionStatus> = async (squad: Squad, instruction: TransactionInstruction) => {
+  const [txPDA, instructions] = await getInstructionsForExecutingInstruction(squad, instruction)
+  await sendAndConfirm(instructions)
+  return executeTransactionInstruction(txPDA)
+}
+
+export const getInstructionsForExecutingInstruction: (
+  squad: Squad,
+  instruction: TransactionInstruction
+) => Promise<[PublicKey, TransactionInstruction[]]> = async (
+  squad: Squad,
+  instruction: TransactionInstruction
+) => {
   const wallet = getWallet()
   const squads = getSquadsSDK()
   const [msPDA] = getMsPDA(new PublicKey(squad.createKey), squads.multisigProgramId)
 
-  let transaction = await squads.createTransaction(msPDA, 1)
-  await squads.addInstruction(transaction.publicKey, instruction)
-  await squads.activateTransaction(transaction.publicKey)
+  const transactionIndex = await squads.getNextTransactionIndex(msPDA)
+  const [txPDA] = getTxPDA(msPDA, new BN(transactionIndex, 10), squads.multisigProgramId)
+  const instructions: TransactionInstruction[] = []
+  instructions.push(await squads.buildCreateTransaction(msPDA, 1, transactionIndex))
+  instructions.push(await squads.buildAddInstruction(msPDA, txPDA, instruction, 1))
+  instructions.push(await squads.buildActivateTransaction(msPDA, txPDA))
   if (squad.members.includes(wallet.publicKey.toBase58())) {
-    await squads.approveTransaction(transaction.publicKey)
+    instructions.push(await squads.buildApproveTransaction(msPDA, txPDA))
   }
 
-  transaction = await squads.getTransaction(transaction.publicKey)
+  return [txPDA, instructions]
+}
+
+export const executeTransactionInstruction: (
+  transactionPDA: PublicKey
+) => Promise<SquadExecutionStatus> = async (transactionPDA) => {
+  const squads = getSquadsSDK()
+  let transaction = await squads.getTransaction(transactionPDA)
   const status = toSquadExecutionStatus(transaction.status)
   if (status == SquadExecutionStatus.ready) {
     await squads.executeTransaction(transaction.publicKey)

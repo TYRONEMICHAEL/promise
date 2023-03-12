@@ -23,10 +23,13 @@ import LayoutApp from '../../layouts/App'
 import { createMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
+import { useSquads } from '../../hooks/squads'
+import { truncate } from '../../utils/helpers'
 
 const CreateMatch = () => {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const [squads] = useSquads()
   const [isCreating, setIsCreating] = useState(false)
 
   const createSnackbarMessage: (message, success) => SnackBarPushedMessage = (
@@ -40,9 +43,10 @@ const CreateMatch = () => {
     }
   }
 
-  const createMatchAction = async ({ wager, hasEndDate, endDate }) => {
+  const createMatchAction = async ({ wager, hasEndDate, endDate, squad }) => {
+    const selectedSquad = squads.find(s => s.address == squad)
     setIsCreating(true)
-    createMatch(new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null))
+    createMatch(new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null), selectedSquad)
       .then((match) => {
         const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
         dispatch(pushMessage(message))
@@ -61,6 +65,7 @@ const CreateMatch = () => {
     wager: '',
     hasEndDate: false,
     endDate: new Date().toLocaleDateString(),
+    squad: ''
   }
 
   const createSchema = Yup.object().shape({
@@ -109,6 +114,19 @@ const CreateMatch = () => {
                 )}
 
                 <BaseDivider />
+
+                <FormField label="Add Squad" help='Optionally add a squad to the match.' labelFor="squad">
+                  <Field name="squad" component="select">
+                    <option value="">None</option>
+                    {squads.map((squad) => {
+                      return (
+                        <option key={squad.address} value={squad.address}>
+                          {truncate(squad.address)}...
+                        </option>
+                      )
+                    })}
+                  </Field>
+                </FormField>
 
                 {isCreating && <LoadingIndicator />}
                 {!isCreating && (

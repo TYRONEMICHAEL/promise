@@ -1,5 +1,4 @@
 import { mdiAccountMultiple, mdiAccountMultiplePlus } from '@mdi/js'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import React, { useCallback, useEffect } from 'react'
 import BaseButton from '../components/BaseButton'
 import CardBox from '../components/CardBox'

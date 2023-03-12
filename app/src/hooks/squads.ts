@@ -1,7 +1,6 @@
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useEffect, useState } from 'react'
-import { getSquads } from '../services/squads'
 import { Squad } from '../interfaces/squads'
+import { getSquads } from '../services/squads'
 import { nothing } from '../utils/helpers'
 
 export const useSquads: () => [Squad[], boolean] = () => {
