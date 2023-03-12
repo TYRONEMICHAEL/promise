@@ -290,6 +290,10 @@ export type Promise = {
         {
           "name": "bump",
           "type": "u8"
+        },
+        {
+          "name": "creator",
+          "type": "publicKey"
         }
       ]
     }
@@ -326,6 +330,10 @@ export type Promise = {
           },
           {
             "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "creator",
             "type": "publicKey"
           },
           {
@@ -996,6 +1004,10 @@ export const IDL: Promise = {
         {
           "name": "bump",
           "type": "u8"
+        },
+        {
+          "name": "creator",
+          "type": "publicKey"
         }
       ]
     }
@@ -1032,6 +1044,10 @@ export const IDL: Promise = {
           },
           {
             "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "creator",
             "type": "publicKey"
           },
           {

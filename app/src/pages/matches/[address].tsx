@@ -1,4 +1,5 @@
 import { mdiAccountMultiple, mdiCheck, mdiTableTennis } from '@mdi/js'
+import { PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -19,7 +20,8 @@ import { useSquads } from '../../hooks/squads'
 import { stateToString } from '../../interfaces/matches'
 import LayoutApp from '../../layouts/App'
 import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
-import { nothing, truncate } from '../../utils/helpers'
+import { nothing } from '../../utils/helpers'
+import { getSquadName } from '../../utils/names'
 
 const MatchDetails = () => {
   const router = useRouter()
@@ -161,7 +163,7 @@ const MatchDetails = () => {
                   return (
                     <div key={squad.address}>
                       <div className="flex items-center justify-between">
-                        <AddressComponent address={squad.address} />
+                        {getSquadName(new PublicKey(squad.address))}
                         {isCompleting && isOwner && <LoadingIndicator />}
                         {!isCompleting && isOwner && (
                           <BaseButton
@@ -202,7 +204,7 @@ const MatchDetails = () => {
                           {squadsNotInMatch.map((squad) => {
                             return (
                               <option key={squad.address} value={squad.address}>
-                                {truncate(squad.address)}...
+                                {getSquadName(new PublicKey(squad.address))}
                               </option>
                             )
                           })}

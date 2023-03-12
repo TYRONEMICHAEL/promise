@@ -3,7 +3,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { ReactElement, useState } from 'react'
+import { ReactElement, useEffect, useState } from 'react'
 import { colorsText } from '../../colors'
 import { AddressComponent } from '../../components/AddressComponent'
 import BaseButton from '../../components/BaseButton'
@@ -15,16 +15,18 @@ import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { SquadWalletSectionComponent } from '../../components/SquadWalletSectionComponent'
 import { getPageTitle } from '../../config'
+import SquadCard from '../../customComponents/SquadCard'
+import { UserAvatarType } from '../../customComponents/UserAvatar'
 import { useSquads } from '../../hooks/squads'
 import { SnackBarPushedMessage } from '../../interfaces'
 import { SquadTransaction, statusToString } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
+import { getMatchesForSquad } from '../../services/matches'
 import { approveTransactionForSquad, getAuthorityKeyForSquad } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { nothing, truncate } from '../../utils/helpers'
 import { getUsername } from '../../utils/names'
-import { SquadAvatar } from '../../customComponents/SquadAvatar'
 
 const SquadDetails = () => {
   const dispatch = useAppDispatch()
@@ -32,10 +34,23 @@ const SquadDetails = () => {
   const wallet = useWallet()
   const [isAccepting, setIsAccepting] = useState(false)
   const [squads, isLoadingSquads] = useSquads()
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false)
+  const [matches, setMatches] = useState([])
 
   const { address } = router.query
   const squad = squads.find((squad) => squad.address == address)
   const member = squad?.members.find((member) => member !== wallet.publicKey?.toBase58())
+
+  useEffect(() => {
+    if (!squad) return
+    setIsLoadingMatches(true)
+    getMatchesForSquad(squad)
+      .then(setMatches)
+      .catch(nothing)
+      .finally(() => {
+        setIsLoadingMatches(false)
+      })
+  }, [setIsLoadingMatches, setMatches, squad])
 
   const approveTransaction = async (transaction) => {
     setIsAccepting(true)
@@ -77,17 +92,44 @@ const SquadDetails = () => {
         {!isLoadingSquads && squad && (
           <>
             <div className="grid lg:grid-cols-3 gap-6 mb-6">
-              <div className="lg:col-span-1 col-span-3">
-                <SquadAvatar squad={squad} />
-                <SquadWalletSectionComponent publicKey={getAuthorityKeyForSquad(squad.address)} />
-                {squad.waitingTransactions.length > 0 && (
-                  <>
+              <div className="lg:col-span-1 col-span-3 mt-6">
+                <SquadCard squad={squad} avatar={UserAvatarType.bot} />
+                <div className="text-gray-500 dark:text-slate-400 grid place-items-center py-3">
+                  <small>Powered by Squads Protocol.</small>
+                </div>
+              </div>
+              <div className="lg:col-span-2 col-span-3">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="lg:col-span-1 col-span-2">
+                    <SquadWalletSectionComponent
+                      publicKey={getAuthorityKeyForSquad(squad.address)}
+                    />
+                  </div>
+                  <div className="lg:col-span-1 col-span-2">
                     <SectionTitleLineWithButton
                       icon={mdiTableTennis}
                       title="Matches"
                       excludeButton
                     />
                     <CardBox>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <b>Number of Matches</b>
+                        </div>
+                        {isLoadingMatches && <LoadingIndicator />}
+                        {!isLoadingMatches && <>{matches.length}</>}
+                      </div>
+                    </CardBox>
+                  </div>
+                </div>
+                {squad.waitingTransactions.length > 0 && (
+                  <>
+                    <SectionTitleLineWithButton
+                      icon={mdiTableTennis}
+                      title="Pending Matches"
+                      excludeButton
+                    />
+                    <CardBox flex="flex-row">
                       {squad.waitingTransactions.map((transaction, index) => {
                         return (
                           <div key={transaction.publicKey.toBase58()}>
@@ -101,8 +143,10 @@ const SquadDetails = () => {
                                   onClick={() => approveTransaction(transaction)}
                                   label="Approve"
                                   icon={mdiCheck}
+                                  iconSize={12}
                                   color="contrast"
                                   small
+                                  roundedFull
                                 />
                               )}
                               {!mustApproveTransaction(transaction) && (
@@ -116,8 +160,6 @@ const SquadDetails = () => {
                     </CardBox>
                   </>
                 )}
-              </div>
-              <div className="lg:col-span-2 col-span-3">
                 <SectionTitleLineWithButton
                   icon={mdiAccountMultiple}
                   title="Details"

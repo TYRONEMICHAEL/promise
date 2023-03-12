@@ -6,6 +6,8 @@ pub struct Promisee {
     pub bump: u8,
     // The owner of this account
     pub owner: Pubkey,
+    // The creator of this account
+    pub creator: Pubkey,
     // The promise network this account belongs to
     pub promise: Pubkey,
     // The time this account was created
@@ -20,6 +22,7 @@ impl Promisee {
     8 +
     8 + // bump
     32 + // owner
+    32 + // creator
     32 + // promise_network
     8 + // created_at
     8; // updated_at

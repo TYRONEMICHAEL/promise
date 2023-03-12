@@ -27,37 +27,12 @@ export const getSquads: () => Promise<Squad[]> = async () => {
   const squads = (await Promise.all(squadsPromises)).flat()
   return await Promise.all(
     squads.map((squad) => {
-      return getSquad(squad)
+      return multiSigToSquad({
+        publicKey: squad.publicKey,
+        ...squad.account,
+      })
     })
   )
-}
-
-const getSquad: (squad: any) => Promise<Squad> = async (squad: any) => {
-  const wallet = getWallet()
-  const address = squad.publicKey.toBase58()
-  const members = squad.account.keys.map((key) => key.toBase58())
-  const transactions = await getTransactionsForSquad(address, SquadExecutionStatus.waiting)
-  let status = SquadStatus.active
-  if (transactions.length > 0) {
-    const user = wallet.publicKey.toBase58()
-    const approved = transactions.filter(
-      (transaction) => !transaction.approved.map((approver) => approver.toBase58()).includes(user)
-    )
-    if (approved.length > 0) {
-      status = SquadStatus.requiresApproval
-    } else {
-      status = SquadStatus.waitingApproval
-    }
-  }
-
-  return {
-    address,
-    members,
-    createKey: squad.account.createKey.toBase58(),
-    numberOfApprovers: squad.account.threshold,
-    status,
-    waitingTransactions: transactions,
-  }
 }
 
 export const getSquadForOwner: (owner: PublicKey) => Promise<Squad> = async (owner: PublicKey) => {
@@ -66,6 +41,12 @@ export const getSquadForOwner: (owner: PublicKey) => Promise<Squad> = async (own
     const authority = getAuthorityKeyForSquad(squad.address)
     return authority.toBase58() == owner.toBase58()
   })
+}
+
+export const getSquad: (publicKey: PublicKey) => Promise<Squad> = async (publicKey: PublicKey) => {
+  const program = getSquadsProgram()
+  const multiSig = await program.account.ms.fetch(publicKey)
+  return multiSig ? multiSigToSquad({ publicKey, ...multiSig }) : null
 }
 
 export const getAuthorityKeyForSquad: (squadAddress: string) => PublicKey = (
@@ -206,7 +187,7 @@ export const getInstructionsForMatch: (
   return instructions.map((instruction) => {
     return {
       address: instruction.publicKey.toBase58(),
-      transaction: instruction.account.keys[0].pubkey.toBase58(),
+      transaction: null, // instruction.account.keys[0].pubkey.toBase58(),
       executed: instruction.account.executed,
     }
   })
@@ -229,7 +210,7 @@ export const getSquadForTransaction: (transactionAddress: string) => Promise<Squ
   const transaction = await program.account.msTransaction.fetch(new PublicKey(transactionAddress))
   const squad = await program.account.ms.fetch(transaction.ms)
 
-  return await getSquad(squad)
+  return await multiSigToSquad(squad)
 }
 
 const getSquadsSDK = () => {
@@ -303,4 +284,32 @@ const getSquadMatchInstructionMemcmp = (value: string) => {
       },
     },
   ]
+}
+
+const multiSigToSquad: (squad: any) => Promise<Squad> = async (squad: any) => {
+  const wallet = getWallet()
+  const address = squad.publicKey.toBase58()
+  const members = squad.keys.map((key) => key.toBase58())
+  const transactions = await getTransactionsForSquad(address, SquadExecutionStatus.waiting)
+  let status = SquadStatus.active
+  if (transactions.length > 0) {
+    const user = wallet.publicKey.toBase58()
+    const approved = transactions.filter(
+      (transaction) => !transaction.approved.map((approver) => approver.toBase58()).includes(user)
+    )
+    if (approved.length > 0) {
+      status = SquadStatus.requiresApproval
+    } else {
+      status = SquadStatus.waitingApproval
+    }
+  }
+
+  return {
+    address,
+    members,
+    createKey: squad.createKey.toBase58(),
+    numberOfApprovers: squad.threshold,
+    status,
+    waitingTransactions: transactions,
+  }
 }

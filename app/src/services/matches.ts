@@ -15,7 +15,7 @@ import {
   executeTransactionInstruction,
   getAuthorityKeyForSquad,
   getInstructionsForExecutingInstruction,
-  getSquadForOwner,
+  getSquad
 } from './squads'
 
 export const getMatches: (onlyYourMatches?: boolean) => Promise<Match[]> = async (
@@ -94,8 +94,9 @@ export const createMatch: (matchDetails: MatchDetails, squad?: Squad) => Promise
 
   let transactionPDA: PublicKey = null
   if (squad) {
+    const creator = new PublicKey(squad.address)
     const owner = getAuthorityKeyForSquad(squad.address)
-    const instruction = await promiseSDK.buildAcceptPromise(promisePDA, owner)
+    const instruction = await promiseSDK.buildAcceptPromise(promisePDA, creator, owner)
     const [txPDA, acceptInstructions] = await getInstructionsForExecutingInstruction(
       squad,
       instruction
@@ -120,31 +121,10 @@ export const acceptMatch: (match: Match, squad: Squad) => Promise<SquadExecution
 ) => {
   const promiseSDK = getPromiseSDK()
   const promise = new PublicKey(match.address)
+  const creator = new PublicKey(squad.address)
   const owner = getAuthorityKeyForSquad(squad.address)
-  const instruction = await promiseSDK.buildAcceptPromise(promise, owner)
+  const instruction = await promiseSDK.buildAcceptPromise(promise, creator, owner)
   return await executeInstructionForSquad(squad, instruction)
-}
-
-export const getParticipantsForMatch: (match: Match) => Promise<string[]> = async (
-  match: Match
-) => {
-  const promiseSDK = getPromiseSDK()
-  const promisees = await promiseSDK.getPromisees({
-    field: PromiseeField.promise,
-    value: match.address,
-  })
-
-  return promisees.map((promisee) => promisee.address.toBase58())
-}
-
-export const getSquadForParticipant: (address: string) => Promise<Squad> = async (
-  address: string
-) => {
-  const promiseSDK = getPromiseSDK()
-  const promisee = await promiseSDK.getPromisee(new PublicKey(address))
-  if (!promisee) return
-
-  return await getSquadForOwner(promisee.owner)
 }
 
 export const getSquadsForMatch: (match: Match) => Promise<Squad[]> = async (match: Match) => {
@@ -155,10 +135,25 @@ export const getSquadsForMatch: (match: Match) => Promise<Squad[]> = async (matc
   })
 
   const filteredPromisees = await Promise.all(
-    promisees.map((promisee) => getSquadForOwner(promisee.owner))
+    promisees.map((promisee) => getSquad(promisee.creator))
   )
 
   return filteredPromisees.filter((x) => x !== undefined)
+}
+
+export const getMatchesForSquad: (squad: Squad) => Promise<Match[]> = async (squad: Squad) => {
+  const promiseSDK = getPromiseSDK()
+  const promisor = await getPromisor()
+  const promisees = await promiseSDK.getPromisees({
+    field: PromiseeField.creator,
+    value: squad.address,
+  })
+
+  const promises = await Promise.all(
+    promisees.map((promisee) => promiseSDK.getPromise(promisee.promise))
+  )
+
+  return promises.map((promise) => matchFromPromise(promise, promisor))
 }
 
 export const completeMatch: (match: Match, squad: Squad) => Promise<boolean> = async (
