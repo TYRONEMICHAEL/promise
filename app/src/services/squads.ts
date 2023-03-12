@@ -1,4 +1,4 @@
-import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
+import { Commitment, Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
 import { getMsPDA, getTxPDA } from '@sqds/sdk'
 import BN from 'bn.js'
 import { squadsInstance, squadsProgram } from '../env'
@@ -35,14 +35,6 @@ export const getSquads: () => Promise<Squad[]> = async () => {
   )
 }
 
-export const getSquadForOwner: (owner: PublicKey) => Promise<Squad> = async (owner: PublicKey) => {
-  const squads = await getSquads()
-  return squads.find((squad) => {
-    const authority = getAuthorityKeyForSquad(squad.address)
-    return authority.toBase58() == owner.toBase58()
-  })
-}
-
 export const getSquad: (publicKey: PublicKey) => Promise<Squad> = async (publicKey: PublicKey) => {
   const program = getSquadsProgram()
   const multiSig = await program.account.ms.fetch(publicKey)
@@ -77,13 +69,6 @@ export const createSquad: (partner: string, threshold: number) => Promise<Squad>
     status: SquadStatus.active,
     waitingTransactions: [],
   }
-}
-
-export const isSquadWaitingApproval: (squadAddress: string) => Promise<boolean> = async (
-  squadAddress: string
-) => {
-  const transactions = await getTransactionsForSquad(squadAddress, SquadExecutionStatus.waiting)
-  return transactions.length > 0
 }
 
 const getTransactionsForSquad: (
@@ -168,7 +153,8 @@ export const executeTransactionInstruction: (
   let transaction = await squads.getTransaction(transactionPDA)
   const status = toSquadExecutionStatus(transaction.status)
   if (status == SquadExecutionStatus.ready) {
-    await squads.executeTransaction(transaction.publicKey)
+    const instruction = await squads.buildExecuteTransaction(transaction.publicKey)
+    await sendAndConfirm([instruction])
     transaction = await squads.getTransaction(transaction.publicKey)
     return toSquadExecutionStatus(transaction.status)
   }

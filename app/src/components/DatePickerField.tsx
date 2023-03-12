@@ -1,18 +1,18 @@
-import React from 'react'
-import { useField, useFormikContext } from 'formik'
-import DatePicker from 'react-datepicker'
+import { useField } from 'formik';
+import DatePicker from 'react-datepicker';
 
-export const DatePickerField = ({ ...props }: any) => {
-  const { setFieldValue } = useFormikContext()
-  const [field] = useField(props)
+export const DatePickerField = ({ name, ...props }: any) => {
+  const [field, meta, helpers] = useField(name);
+
+  const { value } = meta;
+  const { setValue } = helpers;
+
   return (
     <DatePicker
-      {...field}
       {...props}
-      selected={(field.value && new Date(field.value)) || null}
-      onChange={(val) => {
-        setFieldValue(field.name, val)
-      }}
+      {...field}
+      selected={value}
+      onChange={(date) => setValue(date)}
     />
-  )
+  );
 }

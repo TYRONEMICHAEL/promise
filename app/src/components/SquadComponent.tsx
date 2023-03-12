@@ -1,17 +1,13 @@
 import { mdiAccountMultiple, mdiTag } from '@mdi/js'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { useEffect, useState } from 'react'
+import { PublicKey } from '@solana/web3.js'
 import { colorsText } from '../colors'
+import { ColorKey, TrendType } from '../interfaces'
 import { Squad, SquadStatus } from '../interfaces/squads'
-import { isSquadWaitingApproval } from '../services/squads'
-import { truncate } from '../utils/helpers'
+import { getSquadName } from '../utils/names'
+import BaseButton from './BaseButton'
 import BaseIcon from './BaseIcon'
 import CardBox from './CardBox'
 import PillTagTrend from './PillTagTrend'
-import { ColorKey, TrendType } from '../interfaces'
-import BaseButton from './BaseButton'
-import { getSquadName } from '../utils/names'
-import { PublicKey } from '@solana/web3.js'
 
 type Props = {
   squad: Squad

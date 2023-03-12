@@ -46,8 +46,7 @@ const CreateSquad = () => {
         const message = createSnackbarMessage(`Successfully created squad`, true)
         dispatch(pushMessage(message))
       })
-      .catch((error) => {
-        console.log(error)
+      .catch(() => {
         const message = createSnackbarMessage(`Failed to create squad`, false)
         dispatch(pushMessage(message))
       })

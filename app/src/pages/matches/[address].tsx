@@ -1,7 +1,9 @@
-import { mdiAccountMultiple, mdiCheck, mdiTableTennis } from '@mdi/js'
+import { mdiTableTennis, mdiTennisBall } from '@mdi/js'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { PromiseState } from 'promise-sdk/lib/sdk/src/promise/PromiseState'
 import { ReactElement, useEffect, useState } from 'react'
@@ -12,32 +14,30 @@ import BaseDivider from '../../components/BaseDivider'
 import CardBox from '../../components/CardBox'
 import FormField from '../../components/FormField'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
+import { MatchSquadComponent } from '../../components/MatchSquadComponent'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
 import { useMatches } from '../../hooks/matches'
 import { useSquads } from '../../hooks/squads'
 import { stateToString } from '../../interfaces/matches'
+import { Squad } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
 import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
 import { nothing } from '../../utils/helpers'
-import { getSquadName } from '../../utils/names'
+import { getMatchName, getSquadName } from '../../utils/names'
 
 const MatchDetails = () => {
   const router = useRouter()
+  const wallet = useWallet()
   const [isAccepting, setIsAccepting] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
   const [squadsInMatch, setSquadsInMatch] = useState([])
   const [squads] = useSquads()
-  // TODO add match filter
-  const [matches, isLoadingMatches] = useMatches(false)
+  const [matches] = useMatches(false)
 
   const { address } = router.query
   const match = matches.find((match) => match.address == address)
-  const isOwner = match?.state == PromiseState.active && match?.isOwner
-  const squadsNotInMatch = squads.filter(
-    (squad) => !squadsInMatch.map((squad) => squad.address).includes(squad.address)
-  )
 
   useEffect(() => {
     if (match) {
@@ -64,9 +64,20 @@ const MatchDetails = () => {
       })
   }
 
-  const completeMatchAction = async (squad) => {
+  const completeMatchAction = async ({
+    squad1FirstGame,
+    squad2FirstGame,
+    squad1SecondGame,
+    squad2SecondGame,
+    squad1ThirdGame,
+    squad2ThirdGame,
+  }) => {
+    const game1 = squad1FirstGame > squad2FirstGame ? 1 : 0
+    const game2 = squad1SecondGame > squad2SecondGame ? 1 : 0
+    const game3 = squad1ThirdGame > squad2ThirdGame ? 1 : 0
+    const score = game1 + game2 + game3
     setIsCompleting(true)
-    completeMatch(match, squad)
+    completeMatch(match, score > 1 ? firstSquad : secondSquad)
       .then(() => {
         router.reload()
       })
@@ -76,6 +87,30 @@ const MatchDetails = () => {
       })
   }
 
+  if (!match) {
+    return <LoadingIndicator />
+  }
+
+  const matchName = getMatchName(new PublicKey(match.address))
+  const firstSquad: Squad = squadsInMatch.length > 0 ? squadsInMatch[0] : null
+  const secondSquad: Squad = squadsInMatch.length > 1 ? squadsInMatch[1] : null
+  const matchInProgress = match.numberOfPromisees == 2 && firstSquad && secondSquad
+  const matchComplete = match.state == PromiseState.completed
+  const memberKey = wallet?.publicKey?.toBase58()
+  const squadsNotInMatch = squads
+    .filter((squad) => {
+      return !squadsInMatch.map((squad) => squad.address).includes(squad.address)
+    })
+    .filter((squad) => {
+      const squadsInMatchMembers = squadsInMatch.flatMap((squad) => squad.members)
+      return squad.members.find((member) => squadsInMatchMembers.includes(member)) == null
+    })
+  const canAddSquads =
+    match.numberOfPromisees < 2 &&
+    squadsInMatch.find((squad) => squad.members.includes(memberKey)) == undefined &&
+    squadsNotInMatch.length > 0
+  const isOwner = match?.state == PromiseState.active && match?.isOwner
+
   return (
     <>
       <Head>
@@ -83,147 +118,305 @@ const MatchDetails = () => {
       </Head>
 
       <SectionMain>
-        {isLoadingMatches && <LoadingIndicator />}
-        {!isLoadingMatches && match && (
-          <>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-              <CardBox flex="flex-row" className="xl:col-span-2">
-                <SectionTitleLineWithButton icon={mdiTableTennis} title="Details" excludeButton />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+          <div className="xl:col-span-2">
+            <SectionTitleLineWithButton icon={mdiTableTennis} title={matchName} excludeButton />
+            <CardBox className="mb-6">
+              <div className="grid place-items-center mb-6">
+                <h1 className="text-2xl">
+                  <b>
+                    {!matchComplete && matchInProgress && <>Match In Progress</>}
+                    {!matchComplete && !matchInProgress && <>Waiting for Squads</>}
+                    {matchComplete && <>Match Completed</>}
+                  </b>
+                </h1>
+              </div>
+              <div className="grid grid-cols-9 gap-6 justify-between place-items-center mb-6">
+                <div className="col-span-4">
+                  {!firstSquad && canAddSquads && (
+                    <>
+                      <Formik
+                        initialValues={{
+                          squad: '',
+                        }}
+                        onSubmit={(values) => acceptMatchAction(values)}
+                      >
+                        <Form>
+                          <FormField label="Select Squad" labelFor="squad">
+                            <Field name="squad" component="select">
+                              <option value="">None</option>
+                              {squadsNotInMatch.map((squad) => {
+                                return (
+                                  <option key={squad.address} value={squad.address}>
+                                    {getSquadName(new PublicKey(squad.address))}
+                                  </option>
+                                )
+                              })}
+                            </Field>
+                          </FormField>
 
-                <div className="flex items-center justify-between">
-                  <p>
-                    <b>Address</b>
-                  </p>
-                  <AddressComponent address={match.address} />
-                </div>
-
-                <BaseDivider />
-
-                <div className="flex items-center justify-between">
-                  <p>
-                    <b>State</b>
-                  </p>
-                  <p>{stateToString(match.state)}</p>
-                </div>
-
-                <BaseDivider />
-
-                <div className="flex items-center justify-between">
-                  <p>
-                    <b>Created At</b>
-                  </p>
-                  <p>{match.createdAt.toDateString()}</p>
-                </div>
-
-                <BaseDivider />
-
-                <div className="flex items-center justify-between">
-                  <p>
-                    <b>Updated At</b>
-                  </p>
-                  <p>{match.updatedAt.toDateString()}</p>
-                </div>
-
-                <BaseDivider />
-
-                {match.promiseeWager && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <p>
-                        <b>Wager</b>
-                      </p>
-                      <p>{match.promiseeWager}</p>
+                          {isAccepting && <LoadingIndicator />}
+                          {!isAccepting && (
+                            <div className="grid place-items-center">
+                              <BaseButtons>
+                                <BaseButton
+                                  type="submit"
+                                  color="contrast"
+                                  label="Accept"
+                                  small
+                                  roundedFull
+                                />
+                              </BaseButtons>
+                            </div>
+                          )}
+                        </Form>
+                      </Formik>
+                    </>
+                  )}
+                  {!firstSquad && !canAddSquads && (
+                    <div className="text-gray-500 dark:text-slate-400">
+                      <b>Waiting for Squad...</b>
                     </div>
-
-                    <BaseDivider />
-                  </>
-                )}
-
-                {match.endDate && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <p>
-                        <b>End Date</b>
-                      </p>
-                      <p>{match.endDate.toDateString()}</p>
+                  )}
+                  {firstSquad && firstSquad.members.includes(wallet.publicKey?.toBase58()) && (
+                    <Link href={`/squads/${firstSquad.address}`}>
+                      <MatchSquadComponent squad={firstSquad} />
+                    </Link>
+                  )}
+                  {firstSquad && !firstSquad.members.includes(wallet.publicKey?.toBase58()) && (
+                    <MatchSquadComponent squad={firstSquad} />
+                  )}
+                </div>
+                <div className="col-span-1">
+                  <b>vs</b>
+                </div>
+                <div className="col-span-4">
+                  {!firstSquad && (
+                    <div className="text-gray-500 dark:text-slate-400">
+                      <b>Waiting for First Squad...</b>
                     </div>
+                  )}
+                  {firstSquad && canAddSquads && (
+                    <>
+                      <Formik
+                        initialValues={{
+                          squad: '',
+                        }}
+                        onSubmit={(values) => acceptMatchAction(values)}
+                      >
+                        <Form>
+                          <FormField label="Select Squad" labelFor="squad">
+                            <Field name="squad" component="select">
+                              <option value="">None</option>
+                              {squadsNotInMatch.map((squad) => {
+                                return (
+                                  <option key={squad.address} value={squad.address}>
+                                    {getSquadName(new PublicKey(squad.address))}
+                                  </option>
+                                )
+                              })}
+                            </Field>
+                          </FormField>
 
-                    <BaseDivider />
-                  </>
-                )}
-              </CardBox>
-
-              <CardBox className="mb-6">
-                <SectionTitleLineWithButton
-                  icon={mdiAccountMultiple}
-                  title="Squads"
-                  excludeButton
-                />
-                {squadsInMatch.map((squad) => {
-                  return (
-                    <div key={squad.address}>
-                      <div className="flex items-center justify-between">
-                        {getSquadName(new PublicKey(squad.address))}
-                        {isCompleting && isOwner && <LoadingIndicator />}
-                        {!isCompleting && isOwner && (
-                          <BaseButton
-                            onClick={() => completeMatchAction(squad)}
-                            label="Complete"
-                            icon={mdiCheck}
-                            color="contrast"
-                            small
-                          />
-                        )}
-                      </div>
-
-                      <BaseDivider />
+                          {isAccepting && <LoadingIndicator />}
+                          {!isAccepting && (
+                            <div className="grid place-items-center">
+                              <BaseButtons>
+                                <BaseButton
+                                  type="submit"
+                                  color="contrast"
+                                  label="Accept"
+                                  small
+                                  roundedFull
+                                />
+                              </BaseButtons>
+                            </div>
+                          )}
+                        </Form>
+                      </Formik>
+                    </>
+                  )}
+                  {firstSquad && !secondSquad && !canAddSquads && (
+                    <div className="text-gray-500 dark:text-slate-400">
+                      <b>Waiting for Squad...</b>
                     </div>
-                  )
-                })}
-                {squadsInMatch.length <= 0 && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <p>No squads participating</p>
-                    </div>
-
-                    <BaseDivider />
-                  </>
-                )}
-
-                {match.state == PromiseState.active && squadsNotInMatch.length > 0 && (
+                  )}
+                  {firstSquad &&
+                    secondSquad &&
+                    secondSquad.members.includes(wallet.publicKey?.toBase58()) && (
+                      <Link href={`/squads/${secondSquad.address}`}>
+                        <MatchSquadComponent squad={secondSquad} />
+                      </Link>
+                    )}
+                  {firstSquad &&
+                    secondSquad &&
+                    !secondSquad.members.includes(wallet.publicKey?.toBase58()) && (
+                      <MatchSquadComponent squad={secondSquad} />
+                    )}
+                </div>
+              </div>
+              {!matchComplete && matchInProgress && isOwner && (
+                <div className="grid place-items-center">
+                  <div className="text-gray-500 dark:text-slate-400">
+                    <small>Fill in the information from the match when available:</small>
+                  </div>
                   <Formik
                     initialValues={{
-                      squad: squadsNotInMatch[0],
+                      squad1FirstGame: null,
+                      squad2FirstGame: null,
+                      squad1SecondGame: null,
+                      squad2SecondGame: null,
+                      squad1ThirdGame: null,
+                      squad2ThirdGame: null,
                     }}
-                    onSubmit={(values) => acceptMatchAction(values)}
+                    onSubmit={(values) => completeMatchAction(values)}
                   >
-                    <Form>
-                      <FormField label="Add Squad" labelFor="squad">
-                        <Field name="squad" component="select">
-                          <option value="">None</option>
-                          {squadsNotInMatch.map((squad) => {
-                            return (
-                              <option key={squad.address} value={squad.address}>
-                                {getSquadName(new PublicKey(squad.address))}
-                              </option>
-                            )
-                          })}
-                        </Field>
-                      </FormField>
+                    {({ values }) => (
+                      <Form>
+                        <div className="grid place-items-center mb-3 text-gray-500 dark:text-slate-400">
+                          <b>First Game</b>
+                        </div>
+                        <FormField isBorderless>
+                          <Field type="number" name="squad1FirstGame" />
+                          <Field type="number" name="squad2FirstGame" />
+                        </FormField>
+                        {values.squad1FirstGame && values.squad2FirstGame && (
+                          <>
+                            <div className="grid place-items-center mb-3 text-gray-500 dark:text-slate-400">
+                              <b>Second Game</b>
+                            </div>
+                            <FormField isBorderless>
+                              <Field type="number" name="squad1SecondGame" />
+                              <Field type="number" name="squad2SecondGame" />
+                            </FormField>
+                          </>
+                        )}
+                        {values.squad1SecondGame && values.squad2SecondGame && (
+                          <>
+                            <div className="grid place-items-center mb-3 text-gray-500 dark:text-slate-400">
+                              <b>Third Game</b>
+                            </div>
+                            <FormField isBorderless>
+                              <Field type="number" name="squad1ThirdGame" />
+                              <Field type="number" name="squad2ThirdGame" />
+                            </FormField>
+                          </>
+                        )}
 
-                      {isAccepting && <LoadingIndicator />}
-                      {!isAccepting && (
-                        <BaseButtons>
-                          <BaseButton type="submit" color="info" label="Accept" />
-                        </BaseButtons>
-                      )}
-                    </Form>
+                        {values.squad1ThirdGame && values.squad2ThirdGame && isCompleting && (
+                          <LoadingIndicator />
+                        )}
+                        {values.squad1ThirdGame && values.squad2ThirdGame && !isCompleting && (
+                          <div className="grid place-items-center">
+                            <BaseButtons>
+                              <BaseButton
+                                type="submit"
+                                color="contrast"
+                                label="Submit Results"
+                                small
+                                roundedFull
+                              />
+                            </BaseButtons>
+                          </div>
+                        )}
+                      </Form>
+                    )}
                   </Formik>
-                )}
-              </CardBox>
-            </div>
-          </>
-        )}
+                </div>
+              )}
+              {!matchComplete && matchInProgress && !isOwner && (
+                <div className="grid place-items-center mb-6">
+                  <div className="text-gray-500 dark:text-slate-400">
+                    <b>Waiting for Results...</b>
+                  </div>
+                </div>
+              )}
+              {matchComplete && (
+                <div className="grid place-items-center mb-6">
+                  <div className="text-gray-500 dark:text-slate-400">
+                    <b>Match Summary Coming Soon...</b>
+                  </div>
+                </div>
+              )}
+            </CardBox>
+          </div>
+          <div className="xl:col-span-1">
+            <SectionTitleLineWithButton icon={mdiTennisBall} title="Details" excludeButton />
+            <CardBox flex="flex-row">
+              <div className="flex items-center justify-between">
+                <div>
+                  <b>Address</b>
+                  <div className="text-gray-500 dark:text-slate-400">
+                    <small>Public address of the Promise.</small>
+                  </div>
+                </div>
+                <AddressComponent address={match.address} />
+              </div>
+
+              <BaseDivider />
+
+              {match.promiseeWager && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <b>Wager</b>
+                      <div className="text-gray-500 dark:text-slate-400">
+                        <small>The amount required to participate in match.</small>
+                      </div>
+                    </div>
+                    <p>{match.promiseeWager} SOL</p>
+                  </div>
+
+                  <BaseDivider />
+                </>
+              )}
+
+              {match.endDate && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <b>End Date</b>
+                      <div className="text-gray-500 dark:text-slate-400">
+                        <small>The date the match ends.</small>
+                      </div>
+                    </div>
+                    <p>{match.endDate.toDateString()}</p>
+                  </div>
+
+                  <BaseDivider />
+                </>
+              )}
+
+              <div className="flex items-center justify-between">
+                <p>
+                  <b>State</b>
+                </p>
+                <p>{stateToString(match.state)}</p>
+              </div>
+
+              <BaseDivider />
+
+              <div className="flex items-center justify-between">
+                <p>
+                  <b>Created</b>
+                </p>
+                <p>{match.createdAt.toDateString()}</p>
+              </div>
+
+              <BaseDivider />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <b>Last updated</b>
+                  <div className="text-gray-500 dark:text-slate-400">
+                    <small>Last date the match was updated.</small>
+                  </div>
+                </div>
+                <p>{match.updatedAt.toDateString()}</p>
+              </div>
+            </CardBox>
+          </div>
+        </div>
       </SectionMain>
     </>
   )

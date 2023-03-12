@@ -1,23 +1,25 @@
-import { mdiAccountGroup, mdiTableTennis, mdiTennis, mdiTennisBall, mdiWallet } from '@mdi/js'
-import { Match } from '../interfaces/matches'
-import BaseButtons from './BaseButtons'
-import CardBox from './CardBox'
-import IconRounded from './IconRounded'
-import PillTagPlain from './PillTagPlain'
-import UserCardProfileNumber from './UserCardProfileNumber'
-import PillTagTrend from './PillTagTrend'
+import { mdiTableTennis } from '@mdi/js'
+import { PublicKey } from '@solana/web3.js'
 import { PromiseState } from 'promise-sdk/lib/sdk/src/promise/PromiseState'
-import { ColorKey, TrendType } from '../interfaces'
-import BaseButton from './BaseButton'
-import { truncate } from '../utils/helpers'
-import BaseIcon from './BaseIcon'
 import { colorsText } from '../colors'
+import { ColorKey, TrendType } from '../interfaces'
+import { Match } from '../interfaces/matches'
+import { getMatchName, getSquadName } from '../utils/names'
+import BaseIcon from './BaseIcon'
+import CardBox from './CardBox'
+import PillTagTrend from './PillTagTrend'
+import { useEffect, useState } from 'react'
+import { getSquadsForMatch } from '../services/matches'
+import { LoadingIndicator } from './LoadingIndicator'
+import UserAvatarCurrentUser from '../customComponents/UserAvatarCurrentUser'
+import { UserAvatarType } from '../customComponents/UserAvatar'
 
 type Props = {
   match: Match
 }
 
 export const MatchComponent = ({ match }: Props) => {
+  const username = getMatchName(new PublicKey(match.address))
   let statusLabel = 'Active'
   let statusType = 'success'
   switch (match.state) {
@@ -38,13 +40,25 @@ export const MatchComponent = ({ match }: Props) => {
       statusType = 'danger'
       break
   }
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [squadsInMatch, setSquadsInMatch] = useState([])
+
+  useEffect(() => {
+    setIsLoading(true)
+    getSquadsForMatch(match)
+      .then((squads) => setSquadsInMatch(squads))
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [match, setIsLoading, setSquadsInMatch])
   return (
     <>
       <CardBox>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg leading-tight text-gray-500 dark:text-slate-400">Match</h3>
-            <h1 className="text-3xl leading-tight font-semibold">{truncate(match.address)}...</h1>
+            <h1 className="text-3xl leading-tight font-semibold">{username}</h1>
           </div>
           <div>
             <PillTagTrend
@@ -55,7 +69,7 @@ export const MatchComponent = ({ match }: Props) => {
             />
           </div>
         </div>
-        <div className='py-2' />
+        <div className="py-2" />
         <div className="flex items-center justify-between">
           {match.promiseeWager && (
             <div>
@@ -63,13 +77,40 @@ export const MatchComponent = ({ match }: Props) => {
               <h1 className="text-3xl leading-tight font-semibold">{match.promiseeWager}</h1>
             </div>
           )}
-          <div>
-            <h3 className="text-lg leading-tight text-gray-500 dark:text-slate-400">
-              Participants
-            </h3>
-            <h1 className="text-3xl leading-tight font-semibold">{match.numberOfPromisees}</h1>
-          </div>
-          <BaseIcon path={mdiTableTennis} size="48" w="" h="h-16" className={colorsText[statusType]} />
+          {isLoading && <LoadingIndicator />}
+          {!isLoading && squadsInMatch.length > 0 && (
+            <div>
+              <h3 className="text-lg leading-tight text-gray-500 dark:text-slate-400 mb-1">
+                Squads
+              </h3>
+              <div className="flex items-center justify-center">
+                {squadsInMatch.map((squad) => {
+                  const username = getSquadName(new PublicKey(squad.address))
+                  return (
+                    <UserAvatarCurrentUser
+                      key={squad.address}
+                      className="w-8"
+                      avatar={UserAvatarType.bot}
+                      username={username}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {/* <div>
+            {!isLoading && squadsInMatch.length <= 0 && (
+              <h1 className="text-3xl leading-tight font-semibold">0</h1>
+            )}
+            {!isLoading && squadsInMatch.length > 0 && }
+          </div> */}
+          <BaseIcon
+            path={mdiTableTennis}
+            size="48"
+            w=""
+            h="h-16"
+            className={colorsText[statusType]}
+          />
         </div>
       </CardBox>
     </>
