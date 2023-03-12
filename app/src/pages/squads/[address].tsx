@@ -24,7 +24,10 @@ import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { nothing, truncate } from '../../utils/helpers'
 import { getUsername } from '../../utils/names'
-import { SquadAvatar } from '../../customComponents/SquadAvatar'
+import { MembersAvatar } from '../../customComponents/MembersAvatar'
+import { UserAvatarType } from '../../customComponents/UserAvatar'
+import UserCard from '../../customComponents/UserCard'
+import SquadCard from '../../customComponents/SquadCard'
 
 const SquadDetails = () => {
   const dispatch = useAppDispatch()
@@ -77,9 +80,11 @@ const SquadDetails = () => {
         {!isLoadingSquads && squad && (
           <>
             <div className="grid lg:grid-cols-3 gap-6 mb-6">
-              <div className="lg:col-span-1 col-span-3">
-                <SquadAvatar squad={squad} />
-                <SquadWalletSectionComponent publicKey={getAuthorityKeyForSquad(squad.address)} />
+              <div className="lg:col-span-1 col-span-3 mt-6">
+                <>
+                  <SquadCard squad={squad} avatar={UserAvatarType.bot} />
+                  <SquadWalletSectionComponent publicKey={getAuthorityKeyForSquad(squad.address)} />
+                </>
                 {squad.waitingTransactions.length > 0 && (
                   <>
                     <SectionTitleLineWithButton

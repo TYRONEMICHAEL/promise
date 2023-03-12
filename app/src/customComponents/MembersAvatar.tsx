@@ -14,7 +14,7 @@ type Props = {
   children?: ReactNode
 }
 
-export const SquadAvatar = ({ squad, className = '', children }: Props) => {
+export const MembersAvatar = ({ squad, className = '', children }: Props) => {
   const members = squad.members.map((member) => getUsername(new PublicKey(member)))
   return (
     <div className={className}>
@@ -28,7 +28,7 @@ export const SquadAvatar = ({ squad, className = '', children }: Props) => {
                 '-'
               )}.svg`}
               alt={member}
-              className="rounded-full block w-1/2 bg-gray-100 dark:bg-slate-900"
+              className="rounded-full block w-1/2 bg-gray-100 dark:bg-slate-900 -mr-6 border-solid border-l border-gray-700"
             />
           )
         })}
