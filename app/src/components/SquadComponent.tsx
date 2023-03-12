@@ -10,12 +10,15 @@ import CardBox from './CardBox'
 import PillTagTrend from './PillTagTrend'
 import { ColorKey, TrendType } from '../interfaces'
 import BaseButton from './BaseButton'
+import { getSquadName } from '../utils/names'
+import { PublicKey } from '@solana/web3.js'
 
 type Props = {
   squad: Squad
 }
 
 export const SquadComponent = ({ squad }: Props) => {
+  const username = getSquadName(new PublicKey(squad.address))
   let statusLabel = 'Active'
   let statusType = 'success'
   switch (squad.status) {
@@ -48,7 +51,7 @@ export const SquadComponent = ({ squad }: Props) => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg leading-tight text-gray-500 dark:text-slate-400">Squad</h3>
-            <h1 className="text-3xl leading-tight font-semibold">{truncate(squad.address)}...</h1>
+            <h1 className="text-3xl leading-tight font-semibold">{username}</h1>
           </div>
           <BaseIcon
             path={mdiAccountMultiple}

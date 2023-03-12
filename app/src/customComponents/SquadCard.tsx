@@ -1,20 +1,13 @@
-import { mdiCheckDecagram } from '@mdi/js'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
-import { Field, Form, Formik } from 'formik'
 import { colorsOutline } from '../colors'
 import CardBox from '../components/CardBox'
-import FormCheckRadio from '../components/FormCheckRadio'
-import { LoadingIndicator } from '../components/LoadingIndicator'
-import PillTag from '../components/PillTag'
-import { useMatches } from '../hooks/matches'
 import { Squad } from '../interfaces/squads'
-import { getSquadName, getUsername } from '../utils/names'
+import { getSquadName } from '../utils/names'
 import { MembersAvatar } from './MembersAvatar'
 import { UserAvatarType } from './UserAvatar'
 import UserAvatarCurrentUser from './UserAvatarCurrentUser'
 
-const UserCard = ({ squad, avatar }: { squad: Squad; avatar: UserAvatarType }) => {
+const SquadCard = ({ squad, avatar }: { squad: Squad; avatar: UserAvatarType }) => {
   const username = getSquadName(new PublicKey(squad.address))
 
   return (
@@ -34,4 +27,4 @@ const UserCard = ({ squad, avatar }: { squad: Squad; avatar: UserAvatarType }) =
   )
 }
 
-export default UserCard
+export default SquadCard
