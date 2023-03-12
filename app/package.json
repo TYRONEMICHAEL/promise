@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "install:sdk": "cd ../sdk && yarn install && yarn build && cd ../app",
+    "preinstall": "cd ../sdk && yarn install && yarn build && cd ../app",
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
