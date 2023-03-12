@@ -9,7 +9,7 @@ import { PromiseSDK } from 'promise-sdk/lib/sdk/src/PromiseSDK'
 export const solanaWalletCluster = process.env.NEXT_PUBLIC_SOLANA_WALLET_CLUSTER
 export const solanaWalletIsLocalnet = solanaWalletCluster == 'localnet'
 export const solanaWalletEndpoint = !solanaWalletIsLocalnet
-  ? clusterApiUrl(solanaWalletCluster as Cluster)
+  ?  `https://side-hidden-diamond.solana-devnet.discover.quiknode.pro/da5272e336069bd45ffac6f44a87d2934d381bf6/` //clusterApiUrl(solanaWalletCluster as Cluster)
   : 'http://127.0.0.1:8899'
 
 // SQUADS PROTOCOL
