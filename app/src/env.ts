@@ -2,7 +2,7 @@ import { AnchorProvider, Program } from '@project-serum/anchor'
 import { WalletContextState } from '@solana/wallet-adapter-react'
 import { Cluster, Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
 import Squads, { DEFAULT_MULTISIG_PROGRAM_ID } from '@sqds/sdk'
-import { IDL, SquadsMpl } from '@sqds/sdk/lib/target/types/squads_mpl'
+import { IDL as SquadIDL, SquadsMpl } from '@sqds/sdk/lib/target/types/squads_mpl'
 import { PromiseSDK } from 'promise-sdk/lib/sdk/src/PromiseSDK'
 
 // SOLANA
@@ -15,18 +15,19 @@ export const solanaWalletEndpoint = !solanaWalletIsLocalnet
 // SQUADS PROTOCOL
 export const squadsMultisigAddress = process.env.NEXT_PUBLIC_SQUADS_MULTISIG_ADDRESS
 export const squadsMultisigPublicKey = squadsMultisigAddress && new PublicKey(squadsMultisigAddress)
+export const squadsMultisigProgramID = solanaWalletIsLocalnet
+  ? squadsMultisigPublicKey
+  : DEFAULT_MULTISIG_PROGRAM_ID
 export const squadsInstance = (wallet: WalletContextState) => {
   return Squads.endpoint(solanaWalletEndpoint, wallet, {
-    multisigProgramId: solanaWalletIsLocalnet
-      ? squadsMultisigPublicKey
-      : DEFAULT_MULTISIG_PROGRAM_ID,
+    multisigProgramId: squadsMultisigProgramID,
   })
 }
 export const squadsProgram = (connection: Connection, wallet: WalletContextState) => {
-  const idl = IDL
+  const idl = SquadIDL
   return new Program<SquadsMpl>(
     idl,
-    solanaWalletIsLocalnet ? squadsMultisigPublicKey : DEFAULT_MULTISIG_PROGRAM_ID,
+    squadsMultisigProgramID,
     new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions())
   )
 }
