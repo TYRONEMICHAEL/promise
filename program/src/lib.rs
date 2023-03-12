@@ -10,7 +10,7 @@ use anchor_lang::prelude::*;
 use instructions::*;
 use state::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A");
 
 #[program]
 pub mod promise {
@@ -72,7 +72,8 @@ pub mod promise {
     pub fn update_promise_accept<'info>(
         ctx: Context<'_, '_, '_, 'info, UpdatePromiseAccept<'info>>,
         bump: u8,
+        creator: Pubkey
     ) -> Result<()> {
-        instructions::update_promise_accept(ctx, bump)
+        instructions::update_promise_accept(ctx, bump, creator)
     }
 }

@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
+#[instruction(bump: u8, creator: Pubkey)]
 pub struct UpdatePromiseAccept<'info> {
     #[account(
         init,
@@ -28,7 +28,7 @@ pub struct UpdatePromiseAccept<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn update_promise_accept<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromiseAccept<'info>>, bump: u8) -> Result<()> {
+pub fn update_promise_accept<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromiseAccept<'info>>, bump: u8, creator: Pubkey) -> Result<()> {
     if ctx.accounts.promise.state != PromiseState::Active {
         return Err(PromiseError::InvalidPromiseState.into());
     }
@@ -45,6 +45,7 @@ pub fn update_promise_accept<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromis
     let promisee = &mut ctx.accounts.promisee;
     promisee.bump = bump;
     promisee.owner = ctx.accounts.promisee_owner.key();
+    promisee.creator = creator;
     promisee.promise = promise.key();
     promisee.created_at = Clock::get()?.unix_timestamp;
     promisee.updated_at = Clock::get()?.unix_timestamp;

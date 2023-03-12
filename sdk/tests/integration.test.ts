@@ -191,14 +191,19 @@ describe("PromiseSDK", () => {
       });
 
       it("should accept a promise", async () => {
+        const creator = Keypair.generate();
         const accountBalanceBefore = await getBalance(authority);
-        const result = await promise.acceptPromise(lastPromise);
+        const result = await promise.acceptPromise(
+          lastPromise,
+          creator.publicKey
+        );
         lastPromisee = result;
         lastPromise = await promise.getPromise(lastPromise.address);
         const accountBalanceAfter = await getBalance(authority);
 
         expect(result.promise).to.be.eql(lastPromise.address);
         expect(result.owner).to.be.eql(authority.publicKey);
+        expect(result.creator).to.be.eql(creator.publicKey);
         expect(lastPromise.numberOfPromisees).to.be.eql(1);
         expect(accountBalanceAfter).to.be.lessThan(accountBalanceBefore);
       });

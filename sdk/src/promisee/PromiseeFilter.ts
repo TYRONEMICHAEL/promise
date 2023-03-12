@@ -2,9 +2,13 @@ import { GetProgramAccountsFilter } from "@solana/web3.js";
 
 export enum PromiseeField {
   owner = 8 + 1, // bump
-  promise = 8 +
+  creator = 8 +
     1 + // bump
     32, // owner
+  promise = 8 +
+    1 + // bump
+    32 + // owner
+    32, // creator
 }
 
 export type PromiseeFilter = {

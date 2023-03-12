@@ -4,6 +4,7 @@ export type Promisee = {
   address: PublicKey;
   bump: Number;
   owner: PublicKey;
+  creator: PublicKey;
   promise: PublicKey;
   createdAt: Date;
   updatedAt: Date;

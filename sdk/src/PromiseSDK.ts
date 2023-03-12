@@ -711,9 +711,13 @@ export class PromiseSDK {
    * @param promise Promise to create the Promisee under.
    * @returns Promisee for the Promise.
    */
-  public async acceptPromise(promise: PromiseProtocol): Promise<Promisee> {
+  public async acceptPromise(
+    promise: PromiseProtocol,
+    creator?: PublicKey
+  ): Promise<Promisee> {
     const [method, promiseeAccount] = this._buildAcceptPromise(
       promise.address,
+      creator ?? this.wallet.publicKey,
       this.wallet.publicKey
     );
 
@@ -734,20 +738,26 @@ export class PromiseSDK {
    */
   public async buildAcceptPromise(
     promise: PublicKey,
+    creator: PublicKey,
     owner: PublicKey
   ): Promise<TransactionInstruction> {
-    return await this._buildAcceptPromise(promise, owner)[0].instruction();
+    return await this._buildAcceptPromise(
+      promise,
+      creator,
+      owner
+    )[0].instruction();
   }
 
   private _buildAcceptPromise(
     promise: PublicKey,
+    creator: PublicKey,
     owner: PublicKey
   ): [PromiseMethods, PublicKey] {
     const [promiseeAccount, promiseeBump] = this.getPromiseePDA(promise, owner);
 
     return [
       this.program.methods
-        .updatePromiseAccept(promiseeBump)
+        .updatePromiseAccept(promiseeBump, creator)
         .accounts({
           promisee: promiseeAccount,
           promiseeOwner: owner,
@@ -871,6 +881,7 @@ export class PromiseSDK {
     return {
       address: pubKey,
       promise: promisee.promise,
+      creator: promisee.creator,
       owner: promisee.owner,
       createdAt: new Date(promisee.createdAt.toNumber() * 1000),
       updatedAt: new Date(promisee.updatedAt.toNumber() * 1000),
@@ -890,6 +901,7 @@ export class PromiseSDK {
       return {
         address: promisee.publicKey,
         promise: promisee.account.promise,
+        creator: promisee.account.creator,
         owner: promisee.account.owner,
         createdAt: new Date(promisee.account.createdAt.toNumber() * 1000),
         updatedAt: new Date(promisee.account.updatedAt.toNumber() * 1000),

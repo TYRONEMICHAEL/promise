@@ -454,7 +454,7 @@ describe("promise", () => {
     );
 
     await program.methods
-      .updatePromiseAccept(promiseeAccountBump)
+      .updatePromiseAccept(promiseeAccountBump, promiseeOwner.publicKey)
       .accounts({
         promisee: promiseeAccount,
         promiseeOwner: promiseeOwner.publicKey,
@@ -612,7 +612,7 @@ describe("promise", () => {
     
     try {
       await program.methods
-      .updatePromiseAccept(promiseeAccountBump)
+      .updatePromiseAccept(promiseeAccountBump, promiseeOwner.publicKey)
       .accounts({
         promisee: promiseeAccount,
         promiseeOwner: promiseeOwner.publicKey,
@@ -783,7 +783,7 @@ describe("promise", () => {
     );
 
     await program.methods
-      .updatePromiseAccept(promiseeAccountBump)
+      .updatePromiseAccept(promiseeAccountBump, promiseeOwner.publicKey)
       .accounts({
         promisee: promiseeAccount,
         promiseeOwner: promiseeOwner.publicKey,
@@ -978,7 +978,7 @@ describe("promise", () => {
     );
 
     await program.methods
-      .updatePromiseAccept(promiseeAccountBumpA)
+      .updatePromiseAccept(promiseeAccountBumpA, promiseeOwnerA.publicKey)
       .accounts({
         promisee: promiseeAccountA,
         promiseeOwner: promiseeOwnerA.publicKey,
@@ -1009,7 +1009,7 @@ describe("promise", () => {
       );
 
     await program.methods
-      .updatePromiseAccept(promiseeAccountBumpB)
+      .updatePromiseAccept(promiseeAccountBumpB, promiseeOwnerB.publicKey)
       .accounts({
         promisee: promiseeAccountB,
         promiseeOwner: promiseeOwnerB.publicKey,
