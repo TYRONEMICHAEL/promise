@@ -15,6 +15,8 @@
     "borsh": "^0.7.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^10.0.1",
     "@types/node": "^18.14.4",
     "@types/node-fetch": "^2.6.2",
     "ts-mocha": "^10.0.0",
