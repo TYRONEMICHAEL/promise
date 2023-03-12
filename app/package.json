@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "cd ../sdk && npm run build && cd - && next build",
     "export": "next export",
     "start": "next start",
     "lint": "next lint",
