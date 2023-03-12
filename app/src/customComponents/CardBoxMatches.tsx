@@ -44,7 +44,7 @@ const CardBoxSquad = () => {
         </div>
         <div className="text-center md:text-right space-y-2">
           <BaseButton
-            href="/squads/create"
+            href="/matches/create"
             label="Join a new match"
             icon={mdiTennis}
             color="info"

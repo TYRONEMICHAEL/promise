@@ -10,7 +10,7 @@ use anchor_lang::prelude::*;
 use instructions::*;
 use state::*;
 
-declare_id!("EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A");
+declare_id!("DB5HAVRLPUYfUcAKK8A57JAihfZvcT3q17wNESfVb4AP");
 
 #[program]
 pub mod promise {

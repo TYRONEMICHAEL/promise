@@ -6,6 +6,9 @@ import SectionTitleLineWithButton from '../components/SectionTitleLineWithButton
 import CardBoxHistory from '../customComponents/CardBoxHistory'
 import CardBoxMatches from '../customComponents/CardBoxMatches'
 import CardBoxSquad from '../customComponents/CardBoxSquads'
+import MatchInvoices from '../customComponents/MatchInvoices'
+import MatchInvoice from '../customComponents/MatchInvoices'
+import SquadCardDetails from '../customComponents/SquadCardDetail'
 import { UserAvatarType } from '../customComponents/UserAvatar'
 import UserCard from '../customComponents/UserCard'
 import LayoutApp from '../layouts/App'
@@ -50,15 +53,11 @@ const ProfilePage = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
           <div className='flex-1'>
             <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" main excludeButton />
-            <CardBoxSquad />
-            <CardBoxMatches />
-            <CardBoxHistory />
+            <SquadCardDetails />
           </div>
           <div className='flex-1'>
-            <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" main excludeButton />
-            <CardBoxSquad />
-            <CardBoxMatches />
-            <CardBoxHistory />
+            <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Matches" main excludeButton />
+            <MatchInvoices  />
           </div>
         </div>
       </SectionMain>
