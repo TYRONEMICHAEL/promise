@@ -15,6 +15,7 @@
     "borsh": "^0.7.0"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.1.1",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.14.4",
