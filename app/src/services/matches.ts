@@ -59,10 +59,10 @@ export const createMatch: (matchDetails: MatchDetails, squad?: Squad) => Promise
   let uri: string | null = null
 
   if (matchDetails.metadata) {
-    const [_, gatewayUrl] = await pinMatchMetadata(matchDetails.metadata)
-    uri = gatewayUrl
+    const [hash] = await pinMatchMetadata(matchDetails.metadata)
+    uri = hash
   }
-
+  
   if (promisor) {
     promisePDA = promiseSDK.getPromisePDA(
       promiseNetworkPublicKey,

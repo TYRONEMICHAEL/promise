@@ -462,6 +462,7 @@ export class PromiseSDK {
       createdAt: new Date(promise.createdAt.toNumber() * 1000),
       updatedAt: new Date(promise.updatedAt.toNumber() * 1000),
       numberOfPromisees: promise.numPromisees,
+      uri: promise.uri ?? '',
     };
   }
 
@@ -485,7 +486,7 @@ export class PromiseSDK {
         createdAt: new Date(promise.account.createdAt.toNumber() * 1000),
         updatedAt: new Date(promise.account.updatedAt.toNumber() * 1000),
         numberOfPromisees: promise.account.numPromisees,
-        uri: promise.account.uri,
+        uri: promise.account.uri ?? '',
       };
     });
   }

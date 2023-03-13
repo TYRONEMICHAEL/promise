@@ -57,7 +57,7 @@ const MatchDetails = () => {
   }, [dispatch, match, setIsAccepting, setSquadsInMatch])
 
   useEffect(() => {
-    if (match.uri) {
+    if (match?.uri) {
       retrieveMatchMetadata(match.uri).then(setMetadata);
     } 
   }, [match])

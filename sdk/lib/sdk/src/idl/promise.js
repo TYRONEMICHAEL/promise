@@ -170,6 +170,12 @@ exports.IDL = {
                 {
                     "name": "bump",
                     "type": "u8"
+                },
+                {
+                    "name": "uri",
+                    "type": {
+                        "option": "string"
+                    }
                 }
             ]
         },
@@ -263,7 +269,14 @@ exports.IDL = {
                     "isSigner": false
                 }
             ],
-            "args": []
+            "args": [
+                {
+                    "name": "uri",
+                    "type": {
+                        "option": "string"
+                    }
+                }
+            ]
         },
         {
             "name": "updatePromiseAccept",
@@ -400,6 +413,12 @@ exports.IDL = {
                     {
                         "name": "numPromisees",
                         "type": "i32"
+                    },
+                    {
+                        "name": "uri",
+                        "type": {
+                            "option": "string"
+                        }
                     }
                 ]
             }

@@ -51,7 +51,7 @@ impl Promise {
     8 + // updated_at
     8 + // created_at
     4 + // num_promises
-    33; // uri
+    65; // uri
 
     pub fn account_size(&self) -> usize {
         let mut size = Promise::DATA_OFFSET;

@@ -57,11 +57,11 @@ const CreateMatch = () => {
       .then((match) => {
         const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
         dispatch(pushMessage(message))
+        router.push(`/matches/${match.address}`)
       })
       .catch(catchAll(dispatch, 'Failed to create match'))
       .finally(() => {
         setIsCreating(false)
-        router.push('/matches')
       })
   }
 
@@ -70,7 +70,7 @@ const CreateMatch = () => {
     hasEndDate: false,
     endDate: new Date(),
     squad: '',
-    description: null,
+    description: '',
   }
 
   const createSchema = Yup.object().shape({

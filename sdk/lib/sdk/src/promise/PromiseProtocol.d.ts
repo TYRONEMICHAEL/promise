@@ -25,5 +25,7 @@ export type PromiseProtocol = {
     createdAt: Date;
     /** Number of Promisees for the Promise */
     numberOfPromisees: number;
+    /** URI for the Promise */
+    uri: string;
 };
 export declare const createPromiseSeeds: (network: PublicKey, promisor: PublicKey, id: number) => Buffer[];

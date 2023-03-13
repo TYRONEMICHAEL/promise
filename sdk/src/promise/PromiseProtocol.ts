@@ -35,6 +35,9 @@ export type PromiseProtocol = {
 
   /** Number of Promisees for the Promise */
   numberOfPromisees: number;
+
+  /** URI for the Promise */
+  uri: string;
 };
 
 export const createPromiseSeeds = (
