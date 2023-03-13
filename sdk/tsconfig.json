@@ -1,18 +1,18 @@
 {
-    "compilerOptions": {
-      "experimentalDecorators": true,
-      "types": ["mocha", "chai"],
-      "typeRoots": ["./node_modules/@types"],
-      "lib": ["es2015", "DOM"],
-      "module": "commonjs",
-      "target": "es6",
-      "declaration": true,
-      "outDir": "./lib",
-      "strict": true,
-      "moduleResolution": "node",
-      "esModuleInterop": true,
-      "resolveJsonModule": true
-    },
-    "include": ["src", "src/*.json"],
-    "exclude": ["node_modules", "**/__tests__/*"]
-  }
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "types": ["mocha", "chai"],
+    "typeRoots": ["./node_modules/@types"],
+    "lib": ["es2015", "DOM"],
+    "module": "commonjs",
+    "target": "es6",
+    "declaration": true,
+    "outDir": "./lib",
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src", "src/*.json"],
+  "exclude": ["node_modules", "**/__tests__/*"]
+}
