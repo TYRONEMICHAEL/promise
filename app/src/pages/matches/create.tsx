@@ -1,4 +1,4 @@
-import { mdiBallotOutline, mdiCash } from '@mdi/js'
+import { mdiBallotOutline, mdiCash, mdiInformation } from '@mdi/js'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
@@ -18,7 +18,7 @@ import SectionTitleLineWithButton from '../../components/SectionTitleLineWithBut
 import { getPageTitle } from '../../config'
 import { useSquads } from '../../hooks/squads'
 import { SnackBarPushedMessage } from '../../interfaces'
-import { MatchDetails } from '../../interfaces/matches'
+import { MatchDetails, MatchMetadata } from '../../interfaces/matches'
 import LayoutApp from '../../layouts/App'
 import { createMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
@@ -43,11 +43,15 @@ const CreateMatch = () => {
     }
   }
 
-  const createMatchAction = async ({ wager, hasEndDate, endDate, squad }) => {
+  const createMatchAction = async ({ wager, hasEndDate, endDate, squad, description }) => {
+    const metadata: MatchMetadata = description ? {
+      description
+    } : null
+
     const selectedSquad = squads.find((s) => s.address == squad)
     setIsCreating(true)
     createMatch(
-      new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null),
+      new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null, metadata),
       selectedSquad
     )
       .then((match) => {
@@ -66,6 +70,7 @@ const CreateMatch = () => {
     hasEndDate: false,
     endDate: new Date(),
     squad: '',
+    description: null,
   }
 
   const createSchema = Yup.object().shape({
@@ -97,6 +102,15 @@ const CreateMatch = () => {
                       error={errors.wager && touched.wager ? errors.wager : null}
                     >
                       <Field name="wager" type="number" placeholder="Wager (SOL)" />
+                    </FormField>
+
+                    <FormField
+                      label="Description (optional)"
+                      help="Optionally add a description to the match."
+                      icons={[mdiInformation]}
+                      hasTextareaHeight
+                    >
+                      <Field name="description" type="text" placeholder="Matches description" />
                     </FormField>
 
                     <FormField>

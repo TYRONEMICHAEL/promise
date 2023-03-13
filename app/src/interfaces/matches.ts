@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js'
 import { PromiseState } from 'promise-sdk/lib/sdk/src/promise/PromiseState'
 import { PromiseeRuleset } from 'promise-sdk/lib/sdk/src/promisee/PromiseeRuleset'
 import { RulesetDate } from 'promise-sdk/lib/sdk/src/rules/RulsetDate'
@@ -14,6 +15,19 @@ export type Match = {
   createdAt: Date
   updatedAt: Date
   numberOfPromisees: number
+  uri?: string
+}
+
+export type MatchMetadataResult = {
+  result: number[];
+  promisee: PublicKey;
+}
+
+export type MatchMetadata = {
+  name?: string
+  description?: string
+  winner?: PublicKey
+  results?: [MatchMetadataResult, MatchMetadataResult]
 }
 
 export const stateToString = (state: PromiseState) => {
@@ -32,10 +46,12 @@ export const stateToString = (state: PromiseState) => {
 export class MatchDetails {
   amountInLamports: number
   endDate?: Date
+  metadata?: MatchMetadata
 
-  constructor(amountInLamports: number, endDate?: Date) {
+  constructor(amountInLamports: number, endDate?: Date, metadata?: MatchMetadata) {
     this.amountInLamports = amountInLamports
     this.endDate = endDate
+    this.metadata = metadata
   }
 
   toRuleset(): PromiseeRuleset {

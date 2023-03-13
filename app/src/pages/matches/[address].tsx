@@ -24,6 +24,7 @@ import { useSquads } from '../../hooks/squads'
 import { stateToString } from '../../interfaces/matches'
 import { Squad } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
+import { retrieveMatchMetadata } from '../../services/ipfs'
 import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { catchAll } from '../../utils/helpers'
@@ -38,6 +39,7 @@ const MatchDetails = () => {
   const [squadsInMatch, setSquadsInMatch] = useState([])
   const [squads] = useSquads()
   const [matches] = useMatches(false)
+  const [metadata, setMetadata] = useState(undefined)
 
   const { address } = router.query
   const match = matches.find((match) => match.address == address)
@@ -53,6 +55,16 @@ const MatchDetails = () => {
         })
     }
   }, [dispatch, match, setIsAccepting, setSquadsInMatch])
+
+  useEffect(() => {
+    if (match.uri) {
+      retrieveMatchMetadata(match.uri).then(setMetadata);
+    } 
+  }, [match])
+
+  useEffect(() => {
+    console.log('metadata', metadata)
+  }, [metadata])
 
   const acceptMatchAction = async ({ squad }) => {
     const selected = squads.find((sq) => sq.address == squad)
