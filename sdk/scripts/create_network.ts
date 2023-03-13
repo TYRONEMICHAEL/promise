@@ -1,3 +1,5 @@
+const { clusterApiUrl } = require("@solana/web3.js");
+
 const { Connection, Keypair, LAMPORTS_PER_SOL } = require("@solana/web3.js");
 const { PromiseSDK } = require("../lib/sdk/src/PromiseSDK");
 const NodeWallet = require("@project-serum/anchor/dist/cjs/nodewallet");
@@ -6,9 +8,9 @@ const { NetworkRuleset } = require("../lib/sdk/src/network/NetworkRuleset");
 const main = async () => {
   console.log("Creating Network...");
   const authority = Keypair.generate();
-  const promise = PromiseSDK.localnet(new NodeWallet.default(authority));
+  const promise = PromiseSDK.devnet(new NodeWallet.default(authority));
 
-  const connection = new Connection("http://127.0.0.1:8899");
+  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
   const airdropSignature = await connection.requestAirdrop(
     authority.publicKey,
     LAMPORTS_PER_SOL
