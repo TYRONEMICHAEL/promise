@@ -29,7 +29,7 @@ import {
   toPromisorState,
 } from "./promisor/PromisorState";
 
-type ExtendedCluster = "localnet" | Cluster;
+export type ExtendedCluster = "localnet" | Cluster;
 
 const programIDs: Record<ExtendedCluster, string> = {
   localnet: "EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A",
@@ -72,6 +72,10 @@ export class PromiseSDK {
     return this.create(wallet, "mainnet-beta");
   }
 
+  public static getProgramId(env: ExtendedCluster): PublicKey {
+    return new PublicKey(programIDs[env] as string);
+  }
+
   private static create(wallet: Wallet, env: ExtendedCluster): PromiseSDK {
     const endpoint =
       env == "localnet"
@@ -102,6 +106,11 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the public key and bump of a Network based on owner.
+   * @param owner Owner of the Network.
+   * @returns Public key and bump of the Network.
+   */
   public getNetworkPDA(owner: PublicKey): [PublicKey, number] {
     const seeds = createNetworkSeeds(owner);
     return PublicKey.findProgramAddressSync(seeds, this.getProgramId());
@@ -124,7 +133,6 @@ export class PromiseSDK {
 
   /**
    * Gets all Networks that are available on the program.
-   * @param filter Filter to narrow down the list of Networks.
    * @returns Array of Networks.
    */
   public async getNetworks(): Promise<Network[]> {
@@ -143,7 +151,6 @@ export class PromiseSDK {
   /**
    * Initialises a Network on the program.
    * @param ruleset Rules for the Network.
-   * @param customAuthority Ability to supply a custom authority.
    * @returns Newly created Network.
    */
   public async createNetwork(ruleset: NetworkRuleset): Promise<Network> {
@@ -251,6 +258,12 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the public key and bump of a Promisor based on Network and owner.
+   * @param network Address of Network.
+   * @param owner Owner of the Promisor.
+   * @returns Public key and bump of the Promisor.
+   */
   public getPromisorPDA(
     network: PublicKey,
     owner: PublicKey
@@ -372,6 +385,7 @@ export class PromiseSDK {
   /**
    * Builds an instruction to update the state of an existing Promisor.
    * @param promisor Promisor to update.
+   * @param network Network the promisor belongs to.
    * @param state New state for the Promisor.
    * @param owner The owner of the Promisor.
    * @returns An instruction that updates the Promisor.
@@ -412,6 +426,13 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the public key and bump of a Promise based on Network, Promisor and unique id.
+   * @param network Address of Network.
+   * @param promisor Address of the Promisor.
+   * @param id Unique number for the promise (Promisor.numberOfPromises + 1)
+   * @returns Public key and bump of the Promise.
+   */
   public getPromisePDA(
     network: PublicKey,
     promisor: PublicKey,
@@ -593,6 +614,7 @@ export class PromiseSDK {
   /**
    * Builds an instruction that updates a promise.
    * @param promise Promise to update.
+   * @param promisor Promisor that owns the Promise.
    * @param promisorRuleset New ruleset for the Promisor.
    * @param promiseeRuleset New ruleset for the Promisee.
    * @param owner Owner of the Promise.
@@ -665,6 +687,7 @@ export class PromiseSDK {
   /**
    * Builds an instruction that activates a Promise.
    * @param promise Promise to activate.
+   * @param promisor Promisor that owns the Promise.
    * @param owner Owner of the Promise.
    * @returns An instruction that activates a Promise.
    */
@@ -709,6 +732,7 @@ export class PromiseSDK {
   /**
    * Creates and assigns a Promisee to the Promise.
    * @param promise Promise to create the Promisee under.
+   * @param creator Optional creator of the Promisee.
    * @returns Promisee for the Promise.
    */
   public async acceptPromise(
@@ -733,6 +757,7 @@ export class PromiseSDK {
   /**
    * Builds an instruction that creates and assigns a Promisee to the Promise.
    * @param promise Promise to create the Promisee under.
+   * @param creator Optional creator of the Promisee.
    * @param owner Owner of the Promisee.
    * @returns An instruction that creates a Promisee.
    */
@@ -808,7 +833,9 @@ export class PromiseSDK {
   /**
    * Builds an instruction that sets a Promise to complete and assigns the Promisee with the reward.
    * @param promise Promise to complete.
-   * @param promisee Promisee to transfer the reward.
+   * @param promisor Promisor that owns the Promise.
+   * @param promisee Promisee that completed the Promise.
+   * @param promiseeOwner Owner to transfer the rewards.
    * @param owner Owner of the Promise.
    * @returns An instruction that completes a Promise.
    */
@@ -863,6 +890,12 @@ export class PromiseSDK {
    * =========================
    */
 
+  /**
+   * Gets the public key and bump of a Promisee based on the Promise and owner.
+   * @param promise Address of the Promise.
+   * @param owner Owner of the Promisee.
+   * @returns Public key and bump of the Promisee.
+   */
   public getPromiseePDA(
     promise: PublicKey,
     owner: PublicKey
@@ -925,7 +958,7 @@ export class PromiseSDK {
         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
         signature,
       },
-      "finalized"
+      "confirmed"
     );
 
     if (result.value.err != null) {

@@ -49,6 +49,9 @@ class PromiseSDK {
     static mainnet(wallet) {
         return this.create(wallet, "mainnet-beta");
     }
+    static getProgramId(env) {
+        return new web3_js_1.PublicKey(programIDs[env]);
+    }
     static create(wallet, env) {
         const endpoint = env == "localnet"
             ? "http://127.0.0.1:8899"
@@ -74,6 +77,11 @@ class PromiseSDK {
      * NETWORKS
      * =========================
      */
+    /**
+     * Gets the public key and bump of a Network based on owner.
+     * @param owner Owner of the Network.
+     * @returns Public key and bump of the Network.
+     */
     getNetworkPDA(owner) {
         const seeds = (0, Network_1.createNetworkSeeds)(owner);
         return web3_js_1.PublicKey.findProgramAddressSync(seeds, this.getProgramId());
@@ -96,7 +104,6 @@ class PromiseSDK {
     }
     /**
      * Gets all Networks that are available on the program.
-     * @param filter Filter to narrow down the list of Networks.
      * @returns Array of Networks.
      */
     getNetworks() {
@@ -116,7 +123,6 @@ class PromiseSDK {
     /**
      * Initialises a Network on the program.
      * @param ruleset Rules for the Network.
-     * @param customAuthority Ability to supply a custom authority.
      * @returns Newly created Network.
      */
     createNetwork(ruleset) {
@@ -191,6 +197,12 @@ class PromiseSDK {
      * ======================================================
      * PROMISORS
      * =========================
+     */
+    /**
+     * Gets the public key and bump of a Promisor based on Network and owner.
+     * @param network Address of Network.
+     * @param owner Owner of the Promisor.
+     * @returns Public key and bump of the Promisor.
      */
     getPromisorPDA(network, owner) {
         const seeds = (0, Promisor_1.createPromisorSeeds)(network, owner);
@@ -292,6 +304,7 @@ class PromiseSDK {
     /**
      * Builds an instruction to update the state of an existing Promisor.
      * @param promisor Promisor to update.
+     * @param network Network the promisor belongs to.
      * @param state New state for the Promisor.
      * @param owner The owner of the Promisor.
      * @returns An instruction that updates the Promisor.
@@ -315,6 +328,13 @@ class PromiseSDK {
      * ======================================================
      * PROMISES
      * =========================
+     */
+    /**
+     * Gets the public key and bump of a Promise based on Network, Promisor and unique id.
+     * @param network Address of Network.
+     * @param promisor Address of the Promisor.
+     * @param id Unique number for the promise (Promisor.numberOfPromises + 1)
+     * @returns Public key and bump of the Promise.
      */
     getPromisePDA(network, promisor, id) {
         const seeds = (0, PromiseProtocol_1.createPromiseSeeds)(network, promisor, id);
@@ -443,6 +463,7 @@ class PromiseSDK {
     /**
      * Builds an instruction that updates a promise.
      * @param promise Promise to update.
+     * @param promisor Promisor that owns the Promise.
      * @param promisorRuleset New ruleset for the Promisor.
      * @param promiseeRuleset New ruleset for the Promisee.
      * @param owner Owner of the Promise.
@@ -489,6 +510,7 @@ class PromiseSDK {
     /**
      * Builds an instruction that activates a Promise.
      * @param promise Promise to activate.
+     * @param promisor Promisor that owns the Promise.
      * @param owner Owner of the Promise.
      * @returns An instruction that activates a Promise.
      */
@@ -521,6 +543,7 @@ class PromiseSDK {
     /**
      * Creates and assigns a Promisee to the Promise.
      * @param promise Promise to create the Promisee under.
+     * @param creator Optional creator of the Promisee.
      * @returns Promisee for the Promise.
      */
     acceptPromise(promise, creator) {
@@ -537,6 +560,7 @@ class PromiseSDK {
     /**
      * Builds an instruction that creates and assigns a Promisee to the Promise.
      * @param promise Promise to create the Promisee under.
+     * @param creator Optional creator of the Promisee.
      * @param owner Owner of the Promisee.
      * @returns An instruction that creates a Promisee.
      */
@@ -589,7 +613,9 @@ class PromiseSDK {
     /**
      * Builds an instruction that sets a Promise to complete and assigns the Promisee with the reward.
      * @param promise Promise to complete.
-     * @param promisee Promisee to transfer the reward.
+     * @param promisor Promisor that owns the Promise.
+     * @param promisee Promisee that completed the Promise.
+     * @param promiseeOwner Owner to transfer the rewards.
      * @param owner Owner of the Promise.
      * @returns An instruction that completes a Promise.
      */
@@ -624,6 +650,12 @@ class PromiseSDK {
      * ======================================================
      * PROMISEES
      * =========================
+     */
+    /**
+     * Gets the public key and bump of a Promisee based on the Promise and owner.
+     * @param promise Address of the Promise.
+     * @param owner Owner of the Promisee.
+     * @returns Public key and bump of the Promisee.
      */
     getPromiseePDA(promise, owner) {
         const seeds = (0, Promisee_1.createPromiseeSeeds)(promise, owner);
@@ -683,7 +715,7 @@ class PromiseSDK {
                 blockhash: latestBlockHash.blockhash,
                 lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
                 signature,
-            }, "finalized");
+            }, "confirmed");
             if (result.value.err != null) {
                 throw result.value.err;
             }
