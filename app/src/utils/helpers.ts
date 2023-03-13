@@ -13,7 +13,7 @@ export const nothing = (value) => {
   }
 }
 
-export const truncate = (value: any, max = 10) => {
+export const truncate = (value: any, max = 8) => {
   const stringValue = `${value}`
   return stringValue.substring(0, Math.min(stringValue.length, max))
 }

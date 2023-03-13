@@ -1,6 +1,6 @@
 import { mdiBallotOutline, mdiCash } from '@mdi/js'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { Field, Form, Formik } from 'formik'
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import { Field, Form, Formik, useField } from 'formik'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { ReactElement, useState } from 'react'
@@ -25,6 +25,8 @@ import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { useSquads } from '../../hooks/squads'
 import { truncate } from '../../utils/helpers'
+import { getSquadName } from '../../utils/names'
+import DatePicker from 'react-datepicker'
 
 const CreateMatch = () => {
   const dispatch = useAppDispatch()
@@ -44,9 +46,12 @@ const CreateMatch = () => {
   }
 
   const createMatchAction = async ({ wager, hasEndDate, endDate, squad }) => {
-    const selectedSquad = squads.find(s => s.address == squad)
+    const selectedSquad = squads.find((s) => s.address == squad)
     setIsCreating(true)
-    createMatch(new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null), selectedSquad)
+    createMatch(
+      new MatchDetails(wager * LAMPORTS_PER_SOL, hasEndDate ? new Date(endDate) : null),
+      selectedSquad
+    )
       .then((match) => {
         const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
         dispatch(pushMessage(message))
@@ -64,8 +69,8 @@ const CreateMatch = () => {
   const createInitialValues = {
     wager: '',
     hasEndDate: false,
-    endDate: new Date().toLocaleDateString(),
-    squad: ''
+    endDate: new Date(),
+    squad: '',
   }
 
   const createSchema = Yup.object().shape({
@@ -80,67 +85,82 @@ const CreateMatch = () => {
 
       <SectionMain>
         <SectionTitleLineWithButton icon={mdiBallotOutline} title="Create" main excludeButton />
-        <CardBox>
-          <Formik
-            initialValues={createInitialValues}
-            validationSchema={createSchema}
-            onSubmit={(values) => createMatchAction(values)}
-          >
-            {({ values, errors, touched }) => (
-              <Form>
-                <FormField
-                  label="Details"
-                  help="The wager that each squad will have to wage in order to participate."
-                  icons={[mdiCash]}
-                  error={errors.wager && touched.wager ? errors.wager : null}
-                >
-                  <Field name="wager" type="number" placeholder="Wager (SOL)" />
-                </FormField>
+        <Formik
+          initialValues={createInitialValues}
+          validationSchema={createSchema}
+          onSubmit={(values) => createMatchAction(values)}
+        >
+          {({ values, errors, touched }) => (
+            <Form>
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <CardBox>
+                    <FormField
+                      label="Details"
+                      help="The wager that each squad will have to wage in order to participate."
+                      icons={[mdiCash]}
+                      error={errors.wager && touched.wager ? errors.wager : null}
+                    >
+                      <Field name="wager" type="number" placeholder="Wager (SOL)" />
+                    </FormField>
 
-                <BaseDivider />
+                    <FormField>
+                      <FormCheckRadioGroup>
+                        <FormCheckRadio type="checkbox" label="Has end date?">
+                          <Field type="checkbox" name="hasEndDate" />
+                        </FormCheckRadio>
+                      </FormCheckRadioGroup>
+                    </FormField>
 
-                <FormField>
-                  <FormCheckRadioGroup>
-                    <FormCheckRadio type="checkbox" label="Has end date?">
-                      <Field type="checkbox" name="hasEndDate" />
-                    </FormCheckRadio>
-                  </FormCheckRadioGroup>
-                </FormField>
+                    {values.hasEndDate && (
+                      <FormField help="Date the match ends.">
+                        <DatePickerField name="endDate" />
+                      </FormField>
+                    )}
+                  </CardBox>
+                </div>
 
-                {values.hasEndDate && (
-                  <FormField help="Date the match ends.">
-                    <DatePickerField name="endDate" />
-                  </FormField>
-                )}
+                <div>
+                  <CardBox>
+                    <FormField
+                      label="Add Squad"
+                      help="Optionally add a squad to the match."
+                      labelFor="squad"
+                    >
+                      <Field name="squad" component="select">
+                        <option value="">None</option>
+                        {squads.map((squad) => {
+                          return (
+                            <option key={squad.address} value={squad.address}>
+                              {getSquadName(new PublicKey(squad.address))}
+                            </option>
+                          )
+                        })}
+                      </Field>
+                    </FormField>
+                  </CardBox>
+                </div>
+              </div>
 
-                <BaseDivider />
-
-                <FormField label="Add Squad" help='Optionally add a squad to the match.' labelFor="squad">
-                  <Field name="squad" component="select">
-                    <option value="">None</option>
-                    {squads.map((squad) => {
-                      return (
-                        <option key={squad.address} value={squad.address}>
-                          {truncate(squad.address)}...
-                        </option>
-                      )
-                    })}
-                  </Field>
-                </FormField>
-
-                {isCreating && <LoadingIndicator />}
-                {!isCreating && (
-                  <>
-                    <BaseButtons>
-                      <BaseButton type="submit" color="info" label="Submit" />
-                      <BaseButton type="reset" color="info" outline label="Reset" />
-                    </BaseButtons>
-                  </>
-                )}
-              </Form>
-            )}
-          </Formik>
-        </CardBox>
+              {isCreating && <LoadingIndicator />}
+              {!isCreating && (
+                <>
+                  <BaseButtons>
+                    <BaseButton type="submit" color="contrast" label="Submit" small roundedFull />
+                    <BaseButton
+                      type="reset"
+                      color="contrast"
+                      outline
+                      label="Reset"
+                      small
+                      roundedFull
+                    />
+                  </BaseButtons>
+                </>
+              )}
+            </Form>
+          )}
+        </Formik>
       </SectionMain>
     </>
   )
