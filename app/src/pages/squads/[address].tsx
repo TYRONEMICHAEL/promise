@@ -25,7 +25,7 @@ import { getMatchesForSquad } from '../../services/matches'
 import { approveTransactionForSquad, getAuthorityKeyForSquad } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
-import { nothing, truncate } from '../../utils/helpers'
+import { catchAll, truncate } from '../../utils/helpers'
 import { getUsername } from '../../utils/names'
 
 const SquadDetails = () => {
@@ -46,11 +46,11 @@ const SquadDetails = () => {
     setIsLoadingMatches(true)
     getMatchesForSquad(squad)
       .then(setMatches)
-      .catch(nothing)
+      .catch(catchAll(dispatch))
       .finally(() => {
         setIsLoadingMatches(false)
       })
-  }, [setIsLoadingMatches, setMatches, squad])
+  }, [dispatch, setIsLoadingMatches, setMatches, squad])
 
   const approveTransaction = async (transaction) => {
     setIsAccepting(true)
@@ -59,7 +59,7 @@ const SquadDetails = () => {
         router.reload()
         dispatch(pushMessage(createSnackbarMessage('Successfully approved match', true)))
       })
-      .catch(nothing)
+      .catch(catchAll(dispatch, 'Failed to approve match'))
       .finally(() => {
         setIsAccepting(false)
       })

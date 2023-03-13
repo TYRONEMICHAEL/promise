@@ -24,10 +24,12 @@ import { stateToString } from '../../interfaces/matches'
 import { Squad } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
 import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
-import { nothing } from '../../utils/helpers'
+import { useAppDispatch } from '../../stores/hooks'
+import { catchAll } from '../../utils/helpers'
 import { getMatchName, getSquadName } from '../../utils/names'
 
 const MatchDetails = () => {
+  const dispatch = useAppDispatch()
   const router = useRouter()
   const wallet = useWallet()
   const [isAccepting, setIsAccepting] = useState(false)
@@ -44,11 +46,12 @@ const MatchDetails = () => {
       setIsAccepting(true)
       getSquadsForMatch(match)
         .then((squads) => setSquadsInMatch(squads))
+        .catch(catchAll(dispatch))
         .finally(() => {
           setIsAccepting(false)
         })
     }
-  }, [match, setIsAccepting, setSquadsInMatch])
+  }, [dispatch, match, setIsAccepting, setSquadsInMatch])
 
   const acceptMatchAction = async ({ squad }) => {
     const selected = squads.find((sq) => sq.address == squad)
@@ -58,7 +61,7 @@ const MatchDetails = () => {
       .then(() => {
         router.reload()
       })
-      .catch(nothing)
+      .catch(catchAll(dispatch, 'Failed to accept match'))
       .finally(() => {
         setIsAccepting(false)
       })
@@ -81,7 +84,7 @@ const MatchDetails = () => {
       .then(() => {
         router.reload()
       })
-      .catch(nothing)
+      .catch(catchAll(dispatch, 'Failed to complete match'))
       .finally(() => {
         setIsCompleting(false)
       })

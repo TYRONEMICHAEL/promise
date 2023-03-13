@@ -1,16 +1,23 @@
-import { AnchorError, AnchorProvider } from '@project-serum/anchor'
-import { getConnection, getWallet } from '../services/account'
+import { AnchorProvider } from '@project-serum/anchor'
 import { Transaction, TransactionInstruction } from '@solana/web3.js'
+import { SnackBarPushedMessage } from '../interfaces'
+import { getConnection, getWallet } from '../services/account'
+import { pushMessage } from '../stores/snackBarSlice'
 
-export const nothing = (value) => {
+export const nothing = () => {
   // Does nothing
+}
 
-  if (value instanceof AnchorError) {
-    const error: AnchorError = value
-    console.error(error.error.errorMessage)
-  } else {
-    console.log(value)
+export const catchAll = (dispatch, message?) => (error) => {
+  console.error(error)
+  const errorMessage = message ? `${message}: ${error}` : `${error}`
+  const snackbarMessage: SnackBarPushedMessage = {
+    text: errorMessage,
+    lifetime: 3000,
+    color: 'danger',
   }
+
+  dispatch(pushMessage(snackbarMessage))
 }
 
 export const truncate = (value: any, max = 8) => {
