@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Squad } from '../interfaces/squads'
 import { getSquads } from '../services/squads'
-import { nothing } from '../utils/helpers'
+import { useAppDispatch } from '../stores/hooks'
+import { catchAll } from '../utils/helpers'
 
 export const useSquads: () => [Squad[], boolean] = () => {
+  const dispatch = useAppDispatch()
   const [squads, setSquads] = useState([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -11,11 +13,11 @@ export const useSquads: () => [Squad[], boolean] = () => {
     setIsLoading(true)
     getSquads()
       .then(setSquads)
-      .catch(nothing)
+      .catch(catchAll(dispatch, 'Failed to get squads'))
       .finally(() => {
         setIsLoading(false)
       })
-  }, [setSquads, setIsLoading])
+  }, [dispatch, setSquads, setIsLoading])
 
   return [squads, isLoading]
 }

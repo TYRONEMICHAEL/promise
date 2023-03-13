@@ -1,13 +1,12 @@
 import { mdiBallotOutline, mdiCash } from '@mdi/js'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
-import { Field, Form, Formik, useField } from 'formik'
+import { Field, Form, Formik } from 'formik'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { ReactElement, useState } from 'react'
 import * as Yup from 'yup'
 import BaseButton from '../../components/BaseButton'
 import BaseButtons from '../../components/BaseButtons'
-import BaseDivider from '../../components/BaseDivider'
 import CardBox from '../../components/CardBox'
 import { DatePickerField } from '../../components/DatePickerField'
 import FormCheckRadio from '../../components/FormCheckRadio'
@@ -17,16 +16,15 @@ import { LoadingIndicator } from '../../components/LoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
+import { useSquads } from '../../hooks/squads'
 import { SnackBarPushedMessage } from '../../interfaces'
 import { MatchDetails } from '../../interfaces/matches'
 import LayoutApp from '../../layouts/App'
 import { createMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
-import { useSquads } from '../../hooks/squads'
-import { truncate } from '../../utils/helpers'
+import { catchAll } from '../../utils/helpers'
 import { getSquadName } from '../../utils/names'
-import DatePicker from 'react-datepicker'
 
 const CreateMatch = () => {
   const dispatch = useAppDispatch()
@@ -56,10 +54,7 @@ const CreateMatch = () => {
         const message = createSnackbarMessage(`Successfully created match (${match.id})`, true)
         dispatch(pushMessage(message))
       })
-      .catch(() => {
-        const message = createSnackbarMessage('Failed to create match', false)
-        dispatch(pushMessage(message))
-      })
+      .catch(catchAll(dispatch, 'Failed to create match'))
       .finally(() => {
         setIsCreating(false)
         router.push('/matches')

@@ -21,6 +21,7 @@ import LayoutApp from '../../layouts/App'
 import { createSquad } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
+import { catchAll } from '../../utils/helpers'
 
 const CreateSquad = () => {
   const dispatch = useAppDispatch()
@@ -46,10 +47,7 @@ const CreateSquad = () => {
         const message = createSnackbarMessage(`Successfully created squad`, true)
         dispatch(pushMessage(message))
       })
-      .catch(() => {
-        const message = createSnackbarMessage(`Failed to create squad`, false)
-        dispatch(pushMessage(message))
-      })
+      .catch(catchAll(dispatch, 'Failed to create squad'))
       .finally(() => {
         setIsCreating(false)
         router.push('/squads')
@@ -62,18 +60,17 @@ const CreateSquad = () => {
   }
 
   const createSchema = Yup.object().shape({
-    partner: Yup.string()
-      .test(
-        'is-public-key',
-        () => "Your partner's wallet address needs to be a valid wallet address",
-        (value) => {
-          try {
-            return new PublicKey(value) != null
-          } catch {
-            return false
-          }
+    partner: Yup.string().test(
+      'is-public-key',
+      () => "Your partner's wallet address needs to be a valid wallet address",
+      (value) => {
+        try {
+          return new PublicKey(value) != null
+        } catch {
+          return false
         }
-      ),
+      }
+    ),
   })
 
   return (
@@ -103,7 +100,10 @@ const CreateSquad = () => {
 
                 <FormField>
                   <FormCheckRadioGroup>
-                    <FormCheckRadio type="checkbox" label="Require you and your partner to approve matches?">
+                    <FormCheckRadio
+                      type="checkbox"
+                      label="Require you and your partner to approve matches?"
+                    >
                       <Field type="checkbox" name="requireBothApproval" />
                     </FormCheckRadio>
                   </FormCheckRadioGroup>
