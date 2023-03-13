@@ -9,11 +9,11 @@ import { ExtendedCluster, PromiseSDK } from 'promise-sdk/lib/sdk/src/PromiseSDK'
 export const solanaWalletCluster = process.env.NEXT_PUBLIC_SOLANA_WALLET_CLUSTER
 export const solanaWalletIsLocalnet = solanaWalletCluster == 'localnet'
 export const solanaWalletCustomEndpoint = process.env.NEXT_PUBLIC_SOLANA_WALLET_ENDPOINT
-export const solanaWalletEndpoint = solanaWalletCustomEndpoint
+export const solanaWalletEndpoint = solanaWalletIsLocalnet
+  ? 'http://127.0.0.1:8899'
+  : solanaWalletCustomEndpoint
   ? solanaWalletCustomEndpoint
-  : !solanaWalletIsLocalnet
-  ? clusterApiUrl(solanaWalletCluster as Cluster)
-  : 'http://127.0.0.1:8899'
+  : clusterApiUrl(solanaWalletCluster as Cluster) 
 
 // SQUADS PROTOCOL
 export const squadsMultisigAddress = process.env.NEXT_PUBLIC_SQUADS_MULTISIG_ADDRESS
