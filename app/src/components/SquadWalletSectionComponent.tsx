@@ -1,6 +1,5 @@
 import { PublicKey } from "@solana/web3.js"
 import { useEffect, useState } from "react"
-import { solanaWalletCluster } from "../env"
 import { canTopUp as accountCanTopUp, getBalanceForAccount, topUpAccount } from "../services/account"
 import { nothing } from "../utils/helpers"
 import SectionTitleLineWithButton from "./SectionTitleLineWithButton"
@@ -32,7 +31,7 @@ type Props = {
   
     const topUp = async () => {
       setIsLoadingBalance(true)
-      topUpAccount(publicKey, 2)
+      topUpAccount(publicKey, 1)
         .then((balance) => {
           setBalance(balance)
         })

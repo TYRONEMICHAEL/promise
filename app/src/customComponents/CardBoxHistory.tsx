@@ -21,7 +21,7 @@ const CardBoxSquad = () => {
             <div className="text-center space-y-1 md:text-left md:mr-6">
               <h4 className="text-xl">{yourMatches.length === 1 ? `1 Match` : `${yourMatches.length} Matches`}</h4>
               <p className="text-gray-500 dark:text-slate-400">
-                <b>Score: 4.5</b><br/>
+                <b>Individual Score: 4.5</b><br/>
                 <small>Your score accross all macthes</small>
               </p>            
             </div>

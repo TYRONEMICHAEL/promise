@@ -18,7 +18,7 @@ impl Rule for SolWager {
 impl Condition for SolWager {
     fn validate<'c, 'info>(
         &self,
-        promisee: &Account<Promisee>,
+        _promisee: &Account<Promisee>,
         _promise: &Account<Promise>,
         remaining_accounts: &[AccountInfo],
         evaluation_context: &mut EvaluationContext,

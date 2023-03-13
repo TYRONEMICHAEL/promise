@@ -10,11 +10,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@dao-xyz/borsh": "^5.1.5",
     "@project-serum/anchor": "^0.26.0",
     "@solana/web3.js": "^1.73.2",
+    "bn": "^1.0.5",
     "borsh": "^0.7.0"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.1.1",
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^10.0.1",
     "@types/node": "^18.14.4",
     "@types/node-fetch": "^2.6.2",
     "ts-mocha": "^10.0.0",
