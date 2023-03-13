@@ -12,6 +12,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(uri: Option<String>)]
 pub struct UpdatePromiseCompleted<'info> {
     #[account(mut, constraint = promisor_owner.key() == promisor.owner.key())]
     pub promisor: Account<'info, Promisor>,
@@ -24,7 +25,7 @@ pub struct UpdatePromiseCompleted<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn update_promise_completed<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromiseCompleted<'info>>) -> Result<()> {
+pub fn update_promise_completed<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePromiseCompleted<'info>>, uri: Option<String>) -> Result<()> {
     if ctx.accounts.promise.state != PromiseState::Active {
         return Err(PromiseError::InvalidPromiseState.into());
     }
@@ -83,5 +84,6 @@ pub fn update_promise_completed<'info>(ctx: Context<'_, '_, '_, 'info, UpdatePro
 
     promise.state = PromiseState::Completed;
     promise.updated_at = Clock::get()?.unix_timestamp;
+    promise.uri = uri;
     Ok(())
 }

@@ -10,7 +10,7 @@ use crate::{
 };
 use anchor_lang::prelude::*;
 #[derive(Accounts)]
-#[instruction(id: i32, promisor_data: Vec<u8>, promisee_data: Vec<u8>, bump: u8)]
+#[instruction(id: i32, promisor_data: Vec<u8>, promisee_data: Vec<u8>, bump: u8, uri: Option<String>)]
 pub struct InitializePromise<'info> {
     #[account(
       init,
@@ -39,6 +39,7 @@ pub fn initialize_promise<'info>(
     promisor_data: Vec<u8>,
     promisee_data: Vec<u8>,
     bump: u8,
+    uri: Option<String>,
 ) -> Result<()> {
     let rules = match PromisorRules::try_from_slice(&promisor_data) {
         Ok(rules) => rules,
@@ -90,5 +91,6 @@ pub fn initialize_promise<'info>(
     promise.state = PromiseState::Created;
     promise.created_at = Clock::get()?.unix_timestamp;
     promise.updated_at = Clock::get()?.unix_timestamp;
+    promise.uri = uri;
     Ok(())
 }

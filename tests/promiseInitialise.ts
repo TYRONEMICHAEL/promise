@@ -103,7 +103,7 @@ describe("promise", () => {
     const promisorSerialized = serialize(promisorRuleset);
 
     await program.methods
-      .initializePromise(id, promisorSerialized, promiseeSerialized, promiseAccountBump)
+      .initializePromise(id, promisorSerialized, promiseeSerialized, promiseAccountBump, null)
       .accounts({
         promise: promiseAccount,
         promisor: promisorAccount,
@@ -131,6 +131,7 @@ describe("promise", () => {
     expect(promise.network.toBase58()).to.equal(networkAccount.toBase58());
     expect(promise.promisor.toBase58()).to.equal(promisorAccount.toBase58());
     expect(promise.bump).to.equal(promiseAccountBump);
+    expect(promise.uri).to.equal(null);
   });
 
   it("A promise can be initialized with a promisor ruleset", async () => {
@@ -225,9 +226,9 @@ describe("promise", () => {
     );
 
     const promisorSerialized = serialize(promisorRuleset);
-
+    const uri = 'https://example.com/some-random-url';
     await program.methods
-      .initializePromise(id, promisorSerialized, promiseeSerialized, promiseAccountBump)
+      .initializePromise(id, promisorSerialized, promiseeSerialized, promiseAccountBump, uri)
       .accounts({
         promise: promiseAccount,
         promisor: promisorAccount,
@@ -260,5 +261,6 @@ describe("promise", () => {
     expect(promise.network.toBase58()).to.equal(networkAccount.toBase58());
     expect(promise.promisor.toBase58()).to.equal(promisorAccount.toBase58());
     expect(promise.bump).to.equal(promiseAccountBump);
+    expect(promise.uri).to.equal(uri);
   });
 });

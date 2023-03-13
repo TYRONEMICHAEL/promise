@@ -499,7 +499,8 @@ export class PromiseSDK {
   public async createPromise(
     promisor: Promisor,
     promisorRuleset: PromisorRuleset,
-    promiseeRuleset: PromiseeRuleset
+    promiseeRuleset: PromiseeRuleset,
+    uri?: string
   ): Promise<PromiseProtocol> {
     const [method, promiseAccount] = this._buildCreatePromise(
       promisor.address,
@@ -507,7 +508,8 @@ export class PromiseSDK {
       promisor.numberOfPromises + 1,
       promisorRuleset,
       promiseeRuleset,
-      this.wallet.publicKey
+      this.wallet.publicKey,
+      uri
     );
 
     const signature = await method.rpc();
@@ -535,7 +537,8 @@ export class PromiseSDK {
     id: number,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string
   ): Promise<TransactionInstruction> {
     return await this._buildCreatePromise(
       promisor,
@@ -543,7 +546,8 @@ export class PromiseSDK {
       id,
       promisorRuleset,
       promiseeRuleset,
-      owner
+      owner,
+      uri,
     )[0].instruction();
   }
 
@@ -553,7 +557,8 @@ export class PromiseSDK {
     id: number,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string
   ): [PromiseMethods, PublicKey] {
     const promisorData = promisorRuleset.toData();
     const promiseeData = promiseeRuleset.toData();
@@ -565,7 +570,7 @@ export class PromiseSDK {
 
     return [
       this.program.methods
-        .initializePromise(id, promisorData, promiseeData, promiseBump)
+        .initializePromise(id, promisorData, promiseeData, promiseBump, uri ?? null)
         .accounts({
           promise: promiseAccount,
           promisor: promisor,
@@ -860,10 +865,11 @@ export class PromiseSDK {
     promisor: PublicKey,
     promisee: PublicKey,
     promiseeOwner: PublicKey,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string,
   ): PromiseMethods {
     return this.program.methods
-      .updatePromiseCompleted()
+      .updatePromiseCompleted(uri ?? null)
       .accounts({
         promisee: promisee,
         promisor: promisor,

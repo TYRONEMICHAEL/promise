@@ -167,6 +167,12 @@ export type Promise = {
         {
           "name": "bump",
           "type": "u8"
+        },
+        {
+          "name": "uri",
+          "type": {
+            "option": "string"
+          }
         }
       ]
     },
@@ -260,7 +266,14 @@ export type Promise = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "uri",
+          "type": {
+            "option": "string"
+          }
+        }
+      ]
     },
     {
       "name": "updatePromiseAccept",
@@ -397,6 +410,12 @@ export type Promise = {
           {
             "name": "numPromisees",
             "type": "i32"
+          },
+          {
+            "name": "uri",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -881,6 +900,12 @@ export const IDL: Promise = {
         {
           "name": "bump",
           "type": "u8"
+        },
+        {
+          "name": "uri",
+          "type": {
+            "option": "string"
+          }
         }
       ]
     },
@@ -974,7 +999,14 @@ export const IDL: Promise = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "uri",
+          "type": {
+            "option": "string"
+          }
+        }
+      ]
     },
     {
       "name": "updatePromiseAccept",
@@ -1111,6 +1143,12 @@ export const IDL: Promise = {
           {
             "name": "numPromisees",
             "type": "i32"
+          },
+          {
+            "name": "uri",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
