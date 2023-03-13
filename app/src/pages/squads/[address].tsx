@@ -11,6 +11,7 @@ import BaseDivider from '../../components/BaseDivider'
 import BaseIcon from '../../components/BaseIcon'
 import CardBox from '../../components/CardBox'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
+import { PageLoadingIndicator } from '../../components/PageLoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { SquadWalletSectionComponent } from '../../components/SquadWalletSectionComponent'
@@ -88,7 +89,7 @@ const SquadDetails = () => {
       </Head>
 
       <SectionMain>
-        {isLoadingSquads && <LoadingIndicator />}
+        {isLoadingSquads && <PageLoadingIndicator />}
         {!isLoadingSquads && squad && (
           <>
             <div className="grid lg:grid-cols-3 gap-6 mb-6">

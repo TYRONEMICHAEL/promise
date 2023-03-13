@@ -15,6 +15,7 @@ import CardBox from '../../components/CardBox'
 import FormField from '../../components/FormField'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
 import { MatchSquadComponent } from '../../components/MatchSquadComponent'
+import { PageLoadingIndicator } from '../../components/PageLoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
@@ -91,7 +92,7 @@ const MatchDetails = () => {
   }
 
   if (!match) {
-    return <LoadingIndicator />
+    return <PageLoadingIndicator />
   }
 
   const matchName = getMatchName(new PublicKey(match.address))

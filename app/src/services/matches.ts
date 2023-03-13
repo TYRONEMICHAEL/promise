@@ -15,7 +15,8 @@ import {
   executeTransactionInstruction,
   getAuthorityKeyForSquad,
   getInstructionsForExecutingInstruction,
-  getSquad
+  getSquad,
+  getSquads,
 } from './squads'
 
 export const getMatches: (onlyYourMatches?: boolean) => Promise<Match[]> = async (
@@ -154,6 +155,12 @@ export const getMatchesForSquad: (squad: Squad) => Promise<Match[]> = async (squ
   )
 
   return promises.map((promise) => matchFromPromise(promise, promisor))
+}
+
+export const getMatchesForUser: () => Promise<Match[]> = async () => {
+  const squads = await getSquads()
+  const matches = await Promise.all(squads.flatMap((squad) => getMatchesForSquad(squad)))
+  return matches.flat()
 }
 
 export const completeMatch: (match: Match, squad: Squad) => Promise<boolean> = async (
