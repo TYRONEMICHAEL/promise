@@ -45,7 +45,7 @@ const UserCard = ({ avatar }: { avatar: UserAvatarType }) => {
           <><p>
               You have a current score of <b className={colorsOutline['success']}>4.5</b> after playing <b>{yourMatches.length}</b> matches.
             </p><div className="flex justify-center md:block">
-                <PillTag label="Silver" color="white" icon={mdiCheckDecagram} />
+                <PillTag label="Enthusiasts" color="white" icon={mdiCheckDecagram} />
               </div></>
           }
         </div>

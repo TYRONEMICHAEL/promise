@@ -37,7 +37,7 @@ const ProfilePage = () => {
   return (
     <>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiAccount} title="Profile" main excludeButton />
+        <SectionTitleLineWithButton icon={mdiAccount} title="Profile" excludeButton />
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
           <UserCard avatar={UserAvatarType.avatar} />
           <div className="flex-1">

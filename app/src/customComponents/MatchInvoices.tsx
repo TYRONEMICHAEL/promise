@@ -8,9 +8,12 @@ import { LoadingIndicator } from '../components/LoadingIndicator'
 import PillTag from '../components/PillTag'
 import { Match } from '../interfaces/matches'
 import { getMatchesForUser } from '../services/matches'
-import { catchAll } from '../utils/helpers'
+import { catchAll, truncate } from '../utils/helpers'
 import { mdiTableTennis, mdiTennisBall } from '@mdi/js'
 import SectionTitleLineWithButton from '../components/SectionTitleLineWithButton'
+import { getMatchName } from '../utils/names'
+import { PublicKey } from '@solana/web3.js'
+import Link from 'next/link'
 
 const MatchInvoices = () => {
   const [matches, setMatches] = useState([])
@@ -28,7 +31,7 @@ const MatchInvoices = () => {
 
   return (
     <>
-      <SectionTitleLineWithButton icon={mdiTableTennis} title="Matches" main excludeButton>
+      <SectionTitleLineWithButton icon={mdiTableTennis} title="Matches" excludeButton>
         {matches.length > 0 && (
           <BaseButton
             href="/matches/create"
@@ -54,7 +57,9 @@ const MatchInvoices = () => {
         </CardBoxComponentEmpty>
       )}
       {matches.map((match) => (
-        <MatchInvoice key={match.address} match={match} />
+        <Link key={match.address} href={`/matches/${match.address}`}>
+          <MatchInvoice match={match} />
+        </Link>
       ))}
     </>
   )
@@ -65,8 +70,9 @@ const MatchInvoice = ({ match }: { match: Match }) => {
     <CardBox className="mb-6">
       <div className="md:flex md:justify-between md:items-center">
         <BaseButtons type="justify-center justify-start">
-          <BaseButton href={`/matches/${match.address}`} label="View" color="lightDark" small />
-          <BaseButton href={`/matches/${match.address}`} label="Validate" color="lightDark" small />
+          <p className="text-xl">
+            <b>{truncate(getMatchName(new PublicKey(match.address)), 16)}...</b>
+          </p>
         </BaseButtons>
         <div className="mt-6 md:mt-0 flex justify-between md:justify-end items-center">
           <p className="text-gray-500 mr-6">{match.endDate?.toDateString()}</p>
