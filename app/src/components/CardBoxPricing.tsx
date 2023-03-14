@@ -63,7 +63,7 @@ const CardBoxPricing = ({ item, price, period, className, isMain }: Props) => {
       <CardBoxComponentBody className={isCollapsible && isCollapsed ? 'hidden lg:block' : ''}>
         <div className="space-y-6">
           {item.options.map((option) => (
-            <div key={option.main} className="flex items-center">
+            <div key={`${option.main}/${option.sub}`} className="flex items-center">
               <BaseIcon path={mdiCheck} size="24" w="w-8" h="h-8" />
               <span className="text-lg ml-3">
                 <b>{option.main}</b> {option.sub}

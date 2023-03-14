@@ -1,4 +1,4 @@
-import { mdiAccountMultiple, mdiCheck, mdiTableTennis, mdiTimelapse } from '@mdi/js'
+import { mdiAccountMultiple, mdiCheck, mdiTableTennis, mdiTennisBall, mdiTimelapse } from '@mdi/js'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import Head from 'next/head'
@@ -23,7 +23,11 @@ import { SnackBarPushedMessage } from '../../interfaces'
 import { SquadTransaction, statusToString } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
 import { getMatchesForSquad } from '../../services/matches'
-import { approveTransactionForSquad, getAuthorityKeyForSquad, getSquadStatsForMatches } from '../../services/squads'
+import {
+  approveTransactionForSquad,
+  getAuthorityKeyForSquad,
+  getSquadStatsForMatches,
+} from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { catchAll, truncate } from '../../utils/helpers'
@@ -95,7 +99,11 @@ const SquadDetails = () => {
           <>
             <div className="grid lg:grid-cols-3 gap-6 mb-6">
               <div className="lg:col-span-1 col-span-3 mt-6">
-                <SquadCard squad={squad} avatar={UserAvatarType.bot} />
+                <SquadCard
+                  squad={squad}
+                  avatar={UserAvatarType.bot}
+                  numberOfMatches={matchStats ? matchStats.numberOfMatches : 0}
+                />
                 <div className="text-gray-500 dark:text-slate-400 grid place-items-center py-3">
                   <small>Powered by Squads Protocol.</small>
                 </div>
@@ -103,36 +111,23 @@ const SquadDetails = () => {
               <div className="lg:col-span-2 col-span-3">
                 <div className="grid lg:grid-cols-2 gap-6">
                   <div className="lg:col-span-1 col-span-2">
-                    <SquadWalletSectionComponent
-                      publicKey={getAuthorityKeyForSquad(squad.address)}
-                    />
-                  </div>
-                  <div className="lg:col-span-1 col-span-2">
-                    <SectionTitleLineWithButton
-                      icon={mdiTableTennis}
-                      title="Matches"
-                      excludeButton
-                    />
+                    <SectionTitleLineWithButton icon={mdiTableTennis} title="Matches" excludeButton>
+                      <BaseButton
+                        href="/matches/create"
+                        label="Create a match"
+                        icon={mdiTennisBall}
+                        color="contrast"
+                        small
+                        roundedFull
+                      />
+                    </SectionTitleLineWithButton>
                     <CardBox>
-                      {/* <div className="flex items-center justify-between">
-                      <UserCardProfileNumber
-                        number={matchStats ? matchStats.numberOfMatches : 0}
-                        label="Total"
-                      />
-                      <UserCardProfileNumber
-                        className={colorsOutline['success']}
-                        number={matchStats ? matchStats.numberOfWins : 0}
-                        label="Wins"
-                      />
-                      <UserCardProfileNumber
-                        className={colorsOutline['danger']}
-                        number={matchStats ? matchStats.numberOfLosses : 0}
-                        label="Losses"
-                      />
-                      </div> */}
                       <div className="flex items-center justify-between">
                         <div>
-                          <b>Number of Matches</b>
+                          <b>Total</b>
+                          <div className="text-gray-500 dark:text-slate-400">
+                            <small>Total number of matches played.</small>
+                          </div>
                         </div>
                         {isLoadingMatches && <LoadingIndicator />}
                         {!isLoadingMatches && <>{matchStats ? matchStats.numberOfMatches : 0}</>}
@@ -140,7 +135,10 @@ const SquadDetails = () => {
                       <BaseDivider />
                       <div className="flex items-center justify-between">
                         <div>
-                          <b>Number of Wins</b>
+                          <b>Wins</b>
+                          <div className="text-gray-500 dark:text-slate-400">
+                            <small>Total number of matches won.</small>
+                          </div>
                         </div>
                         {isLoadingMatches && <LoadingIndicator />}
                         {!isLoadingMatches && <>{matchStats ? matchStats.numberOfWins : 0}</>}
@@ -148,12 +146,20 @@ const SquadDetails = () => {
                       <BaseDivider />
                       <div className="flex items-center justify-between">
                         <div>
-                          <b>Number of Losses</b>
+                          <b>Losses</b>
+                          <div className="text-gray-500 dark:text-slate-400">
+                            <small>Total number of matches lost.</small>
+                          </div>
                         </div>
                         {isLoadingMatches && <LoadingIndicator />}
                         {!isLoadingMatches && <>{matchStats ? matchStats.numberOfLosses : 0}</>}
                       </div>
                     </CardBox>
+                  </div>
+                  <div className="lg:col-span-1 col-span-2">
+                    <SquadWalletSectionComponent
+                      publicKey={getAuthorityKeyForSquad(squad.address)}
+                    />
                   </div>
                 </div>
                 {squad.waitingTransactions.length > 0 && (

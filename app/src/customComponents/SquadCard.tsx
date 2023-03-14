@@ -7,7 +7,7 @@ import { MembersAvatar } from './MembersAvatar'
 import { UserAvatarType } from './UserAvatar'
 import UserAvatarCurrentUser from './UserAvatarCurrentUser'
 
-const SquadCard = ({ squad, avatar }: { squad: Squad; avatar: UserAvatarType }) => {
+const SquadCard = ({ squad, avatar, numberOfMatches }: { squad: Squad; avatar: UserAvatarType, numberOfMatches: number }) => {
   const username = getSquadName(new PublicKey(squad.address))
 
   return (
@@ -18,7 +18,7 @@ const SquadCard = ({ squad, avatar }: { squad: Squad; avatar: UserAvatarType }) 
           <h1 className="text-2xl">
             Howdy, <b>{username}</b>!
           </h1>
-          <p>This is your team name and avatar. A fresh NFT. Your squad has a current score of <b className={colorsOutline['success']}>4.5</b> after playing <b>{3}</b> matches.</p>
+          <p>This is your team name and avatar. A fresh NFT. Your squad has a current score of <b className={colorsOutline['success']}>4.5</b> after playing <b>{numberOfMatches}</b> matches.</p>
           <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
           <MembersAvatar squad={squad} />
         </div>

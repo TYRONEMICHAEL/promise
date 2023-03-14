@@ -33,7 +33,7 @@ const SquadCardDetails = () => {
 
   return (
     <>
-      <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" main excludeButton>
+      <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" excludeButton>
         {squads.length > 0 && (
           <BaseButton
             href="/squads/create"
