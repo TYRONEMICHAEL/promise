@@ -15,6 +15,10 @@ export const solanaWalletEndpoint = solanaWalletIsLocalnet
   ? solanaWalletCustomEndpoint
   : clusterApiUrl(solanaWalletCluster as Cluster) 
 
+
+export const pinataApiKey = process.env.NEXT_PUBLIC_PROMISE_PINATA_API_KEY
+export const pinataSecretApiKey = process.env.NEXT_PUBLIC_PROMISE_PINATA_API_SECRET
+
 // SQUADS PROTOCOL
 export const squadsMultisigAddress = process.env.NEXT_PUBLIC_SQUADS_MULTISIG_ADDRESS
 export const squadsMultisigPublicKey = squadsMultisigAddress && new PublicKey(squadsMultisigAddress)

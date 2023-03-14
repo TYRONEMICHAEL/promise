@@ -10,7 +10,7 @@ use anchor_lang::prelude::*;
 use instructions::*;
 use state::*;
 
-declare_id!("DB5HAVRLPUYfUcAKK8A57JAihfZvcT3q17wNESfVb4AP");
+declare_id!("EPwTUQEDoSREqyG9kp4rn2NtxkumDoMGdGnACv6s8J3A");
 
 #[program]
 pub mod promise {
@@ -45,8 +45,9 @@ pub mod promise {
         promisor_data: Vec<u8>,
         promisee_data: Vec<u8>,
         bump: u8,
+        uri: Option<String>,
     ) -> Result<()> {
-        instructions::initialize_promise(ctx, id, promisor_data, promisee_data, bump)
+        instructions::initialize_promise(ctx, id, promisor_data, promisee_data, bump, uri)
     }
 
     pub fn update_promise_rules<'info>(
@@ -64,9 +65,10 @@ pub mod promise {
     }
 
     pub fn update_promise_completed<'info>(
-        ctx: Context<'_, '_, '_, 'info, UpdatePromiseCompleted<'info>>
+        ctx: Context<'_, '_, '_, 'info, UpdatePromiseCompleted<'info>>,
+        uri: Option<String>,
     ) -> Result<()> {
-        instructions::update_promise_completed(ctx)
+        instructions::update_promise_completed(ctx, uri)
     }
 
     pub fn update_promise_accept<'info>(

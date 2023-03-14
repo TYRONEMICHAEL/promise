@@ -43,14 +43,14 @@ const CreateSquad = () => {
     const threshold = requireBothApproval ? 2 : 1
     setIsCreating(true)
     createSquad(partner, threshold)
-      .then(() => {
+      .then((s) => {
         const message = createSnackbarMessage(`Successfully created squad`, true)
         dispatch(pushMessage(message))
+        router.push(`/squads/${s.address}`)
       })
       .catch(catchAll(dispatch, 'Failed to create squad'))
       .finally(() => {
         setIsCreating(false)
-        router.push('/squads')
       })
   }
 

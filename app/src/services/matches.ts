@@ -6,10 +6,11 @@ import { Promisor } from 'promise-sdk/lib/sdk/src/promisor/Promisor'
 import { PromisorField } from 'promise-sdk/lib/sdk/src/promisor/PromisorFilter'
 import { PromisorRuleset } from 'promise-sdk/lib/sdk/src/promisor/PromisorRuleset'
 import { promiseInstance, promiseNetworkAddress, promiseNetworkPublicKey } from '../env'
-import { Match, MatchDetails } from '../interfaces/matches'
+import { Match, MatchDetails, MatchMetadata } from '../interfaces/matches'
 import { Squad, SquadExecutionStatus } from '../interfaces/squads'
 import { sendAndConfirm } from '../utils/helpers'
 import { getConnection, getWallet } from './account'
+import { pinMatchMetadata } from './ipfs'
 import {
   executeInstructionForSquad,
   executeTransactionInstruction,
@@ -55,6 +56,13 @@ export const createMatch: (matchDetails: MatchDetails, squad?: Squad) => Promise
   const instructions: TransactionInstruction[] = []
   let promisorPDA: PublicKey = promisor?.address
   let promisePDA: PublicKey = null
+  let uri: string | null = null
+
+  if (matchDetails.metadata) {
+    const [hash] = await pinMatchMetadata(matchDetails.metadata)
+    uri = hash
+  }
+  
   if (promisor) {
     promisePDA = promiseSDK.getPromisePDA(
       promiseNetworkPublicKey,
@@ -68,7 +76,8 @@ export const createMatch: (matchDetails: MatchDetails, squad?: Squad) => Promise
         promisor.numberOfPromises + 1,
         promisorRuleset,
         promiseeRuleset,
-        wallet.publicKey
+        wallet.publicKey,
+        uri
       )
     )
     instructions.push(
@@ -163,9 +172,10 @@ export const getMatchesForUser: () => Promise<Match[]> = async () => {
   return matches.flat()
 }
 
-export const completeMatch: (match: Match, squad: Squad) => Promise<boolean> = async (
+export const completeMatch = async (
   match: Match,
-  squad: Squad
+  squad: Squad,
+  matchMetada?: MatchMetadata
 ) => {
   const promiseSDK = getPromiseSDK()
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
@@ -182,14 +192,19 @@ export const completeMatch: (match: Match, squad: Squad) => Promise<boolean> = a
     return false
   }
 
-  await promiseSDK.completePromise(promise, promisee)
-  return true
+  let uri: string | null = null
+  if (matchMetada) {
+    const [hash] = await pinMatchMetadata(matchMetada)
+    uri = hash
+  }
+
+  await promiseSDK.completePromise(promise, promisee, uri)
+  return false
 }
 
 const getPromiseSDK = () => {
   const connection = getConnection()
   const wallet = getWallet()
-
   return promiseInstance(connection, wallet)
 }
 
@@ -231,5 +246,6 @@ const matchFromPromise = (promise: PromiseProtocol, promisor?: Promisor) => {
     createdBy: promise.promisor.toBase58(),
     updatedAt: promise.updatedAt,
     numberOfPromisees: promise.numberOfPromisees,
+    uri: promise.uri,
   }
 }

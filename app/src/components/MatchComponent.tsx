@@ -13,13 +13,14 @@ import { getSquadsForMatch } from '../services/matches'
 import { LoadingIndicator } from './LoadingIndicator'
 import UserAvatarCurrentUser from '../customComponents/UserAvatarCurrentUser'
 import { UserAvatarType } from '../customComponents/UserAvatar'
+import { truncate } from '../utils/helpers'
 
 type Props = {
   match: Match
 }
 
 export const MatchComponent = ({ match }: Props) => {
-  const username = getMatchName(new PublicKey(match.address))
+  const matchName = getMatchName(new PublicKey(match.address))
   let statusLabel = 'Active'
   let statusType = 'success'
   switch (match.state) {
@@ -58,7 +59,7 @@ export const MatchComponent = ({ match }: Props) => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg leading-tight text-gray-500 dark:text-slate-400">Match</h3>
-            <h1 className="text-3xl leading-tight font-semibold">{username}</h1>
+            <h1 className="text-3xl leading-tight font-semibold">{truncate(matchName, 16)}...</h1>
           </div>
           <div>
             <PillTagTrend

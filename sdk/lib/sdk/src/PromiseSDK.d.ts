@@ -175,7 +175,7 @@ export declare class PromiseSDK {
      * @param promiseeRuleset Ruleset for the Promisee.
      * @returns Newly created Promise.
      */
-    createPromise(promisor: Promisor, promisorRuleset: PromisorRuleset, promiseeRuleset: PromiseeRuleset): Promise<PromiseProtocol>;
+    createPromise(promisor: Promisor, promisorRuleset: PromisorRuleset, promiseeRuleset: PromiseeRuleset, uri?: string): Promise<PromiseProtocol>;
     /**
      * Builds an instruction that creates a Promise for the Promisor.
      * @param promisor Promisor that owns the Promise.
@@ -186,7 +186,7 @@ export declare class PromiseSDK {
      * @param owner Owner of the Promise/Promisor.
      * @returns An instruction that creates a Promise.
      */
-    buildCreatePromise(promisor: PublicKey, network: PublicKey, id: number, promisorRuleset: PromisorRuleset, promiseeRuleset: PromiseeRuleset, owner: PublicKey): Promise<TransactionInstruction>;
+    buildCreatePromise(promisor: PublicKey, network: PublicKey, id: number, promisorRuleset: PromisorRuleset, promiseeRuleset: PromiseeRuleset, owner: PublicKey, uri?: string): Promise<TransactionInstruction>;
     private _buildCreatePromise;
     /**
      * Updates an existing Promise with new rulesets.
@@ -244,7 +244,7 @@ export declare class PromiseSDK {
      * @param promisee Promisee to transfer the reward.
      * @returns Updated Promise.
      */
-    completePromise(promise: PromiseProtocol, promisee: Promisee): Promise<PromiseProtocol>;
+    completePromise(promise: PromiseProtocol, promisee: Promisee, uri?: string): Promise<PromiseProtocol>;
     /**
      * Builds an instruction that sets a Promise to complete and assigns the Promisee with the reward.
      * @param promise Promise to complete.

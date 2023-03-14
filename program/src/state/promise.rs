@@ -35,6 +35,8 @@ pub struct Promise {
     pub created_at: i64,
     // The number of promisees that have accepted this promise
     pub num_promisees: i32,
+    // URI pointing to JSON representing the promise
+    pub uri: Option<String>,
 }
 
 impl Promise {
@@ -48,7 +50,8 @@ impl Promise {
     1 + // state
     8 + // updated_at
     8 + // created_at
-    4; // num_promises
+    4 + // num_promises
+    65; // uri
 
     pub fn account_size(&self) -> usize {
         let mut size = Promise::DATA_OFFSET;

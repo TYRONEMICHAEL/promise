@@ -346,6 +346,7 @@ class PromiseSDK {
      * @returns Promise if it exists.
      */
     getPromise(pubKey) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             const promise = yield this.program.account.promise.fetch(pubKey);
             return {
@@ -359,6 +360,7 @@ class PromiseSDK {
                 createdAt: new Date(promise.createdAt.toNumber() * 1000),
                 updatedAt: new Date(promise.updatedAt.toNumber() * 1000),
                 numberOfPromisees: promise.numPromisees,
+                uri: (_a = promise.uri) !== null && _a !== void 0 ? _a : '',
             };
         });
     }
@@ -372,6 +374,7 @@ class PromiseSDK {
             const filters = (0, PromiseFilter_1.fromPromiseFilter)(filter);
             const promises = yield this.program.account.promise.all(filters);
             return promises.map((promise) => {
+                var _a;
                 return {
                     id: promise.account.id,
                     address: promise.publicKey,
@@ -383,6 +386,7 @@ class PromiseSDK {
                     createdAt: new Date(promise.account.createdAt.toNumber() * 1000),
                     updatedAt: new Date(promise.account.updatedAt.toNumber() * 1000),
                     numberOfPromisees: promise.account.numPromisees,
+                    uri: (_a = promise.account.uri) !== null && _a !== void 0 ? _a : '',
                 };
             });
         });
@@ -394,9 +398,9 @@ class PromiseSDK {
      * @param promiseeRuleset Ruleset for the Promisee.
      * @returns Newly created Promise.
      */
-    createPromise(promisor, promisorRuleset, promiseeRuleset) {
+    createPromise(promisor, promisorRuleset, promiseeRuleset, uri) {
         return __awaiter(this, void 0, void 0, function* () {
-            const [method, promiseAccount] = this._buildCreatePromise(promisor.address, promisor.network, promisor.numberOfPromises + 1, promisorRuleset, promiseeRuleset, this.wallet.publicKey);
+            const [method, promiseAccount] = this._buildCreatePromise(promisor.address, promisor.network, promisor.numberOfPromises + 1, promisorRuleset, promiseeRuleset, this.wallet.publicKey, uri);
             const signature = yield method.rpc();
             yield this.confirmTransaction(signature);
             const promise = yield this.getPromise(promiseAccount);
@@ -415,18 +419,18 @@ class PromiseSDK {
      * @param owner Owner of the Promise/Promisor.
      * @returns An instruction that creates a Promise.
      */
-    buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner) {
+    buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner, uri) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this._buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner)[0].instruction();
+            return yield this._buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner, uri)[0].instruction();
         });
     }
-    _buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner) {
+    _buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner, uri) {
         const promisorData = promisorRuleset.toData();
         const promiseeData = promiseeRuleset.toData();
         const [promiseAccount, promiseBump] = this.getPromisePDA(network, promisor, id);
         return [
             this.program.methods
-                .initializePromise(id, promisorData, promiseeData, promiseBump)
+                .initializePromise(id, promisorData, promiseeData, promiseBump, uri !== null && uri !== void 0 ? uri : null)
                 .accounts({
                 promise: promiseAccount,
                 promisor: promisor,
@@ -600,9 +604,9 @@ class PromiseSDK {
      * @param promisee Promisee to transfer the reward.
      * @returns Updated Promise.
      */
-    completePromise(promise, promisee) {
+    completePromise(promise, promisee, uri) {
         return __awaiter(this, void 0, void 0, function* () {
-            const signature = yield this._buildCompletePromise(promise.address, promise.promisor, promisee.address, promisee.owner, this.wallet.publicKey).rpc();
+            const signature = yield this._buildCompletePromise(promise.address, promise.promisor, promisee.address, promisee.owner, this.wallet.publicKey, uri).rpc();
             yield this.confirmTransaction(signature);
             const completedPromise = yield this.getPromise(promise.address);
             if (completedPromise == null)
@@ -624,9 +628,9 @@ class PromiseSDK {
             return yield this._buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner).instruction();
         });
     }
-    _buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner) {
+    _buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner, uri) {
         return this.program.methods
-            .updatePromiseCompleted()
+            .updatePromiseCompleted(uri !== null && uri !== void 0 ? uri : null)
             .accounts({
             promisee: promisee,
             promisor: promisor,

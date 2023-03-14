@@ -1,4 +1,4 @@
-import { mdiTableTennis, mdiTennisBall } from '@mdi/js'
+import { mdiCheckDecagram, mdiTableTennis, mdiTennisBall } from '@mdi/js'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import { Field, Form, Formik } from 'formik'
@@ -7,10 +7,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { PromiseState } from 'promise-sdk/lib/sdk/src/promise/PromiseState'
 import { ReactElement, useEffect, useState } from 'react'
+import { colorsOutline } from '../../colors'
 import { AddressComponent } from '../../components/AddressComponent'
 import BaseButton from '../../components/BaseButton'
 import BaseButtons from '../../components/BaseButtons'
 import BaseDivider from '../../components/BaseDivider'
+import BaseIcon from '../../components/BaseIcon'
 import CardBox from '../../components/CardBox'
 import FormField from '../../components/FormField'
 import { LoadingIndicator } from '../../components/LoadingIndicator'
@@ -21,9 +23,10 @@ import SectionTitleLineWithButton from '../../components/SectionTitleLineWithBut
 import { getPageTitle } from '../../config'
 import { useMatches } from '../../hooks/matches'
 import { useSquads } from '../../hooks/squads'
-import { stateToString } from '../../interfaces/matches'
+import { MatchMetadata, MatchMetadataResult, stateToString } from '../../interfaces/matches'
 import { Squad } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
+import { retrieveMatchMetadata } from '../../services/ipfs'
 import { acceptMatch, completeMatch, getSquadsForMatch } from '../../services/matches'
 import { useAppDispatch } from '../../stores/hooks'
 import { catchAll } from '../../utils/helpers'
@@ -38,6 +41,8 @@ const MatchDetails = () => {
   const [squadsInMatch, setSquadsInMatch] = useState([])
   const [squads] = useSquads()
   const [matches] = useMatches(false)
+  const [metadata, setMetadata] = useState<MatchMetadata>(undefined)
+  const [winningSquad, setWinningSquad] = useState<Squad>(undefined)
 
   const { address } = router.query
   const match = matches.find((match) => match.address == address)
@@ -53,6 +58,23 @@ const MatchDetails = () => {
         })
     }
   }, [dispatch, match, setIsAccepting, setSquadsInMatch])
+
+  useEffect(() => {
+    if (match?.uri && !metadata) {
+      retrieveMatchMetadata(match.uri).then(setMetadata);
+    } 
+  }, [match, metadata])
+
+  useEffect(() => {
+    if (metadata?.winner && !winningSquad) {
+      const winningSquad = squads.find((squad) => squad.address == metadata.winner)
+      setWinningSquad(winningSquad)
+    } 
+  }, [metadata, squads, winningSquad])
+
+  useEffect(() => {
+    console.log('metadata', metadata)
+  }, [metadata])
 
   const acceptMatchAction = async ({ squad }) => {
     const selected = squads.find((sq) => sq.address == squad)
@@ -80,8 +102,17 @@ const MatchDetails = () => {
     const game2 = squad1SecondGame > squad2SecondGame ? 1 : 0
     const game3 = squad1ThirdGame > squad2ThirdGame ? 1 : 0
     const score = game1 + game2 + game3
+    const winner = score > 1 ? firstSquad : secondSquad
+    const matchResultMetadata = { 
+      winner: winner.address, 
+      score: [
+        { squad: firstSquad.address, score: [squad1FirstGame, squad1SecondGame, squad1ThirdGame ] as number[] },
+        { squad: secondSquad.address, score: [squad2FirstGame, squad2SecondGame, squad2ThirdGame ] as number[] },
+      ] as [MatchMetadataResult, MatchMetadataResult]
+    }
+    const completedMetadata = { ...metadata, ...matchResultMetadata }
     setIsCompleting(true)
-    completeMatch(match, score > 1 ? firstSquad : secondSquad)
+    completeMatch(match, winner, completedMetadata)
       .then(() => {
         router.reload()
       })
@@ -185,6 +216,9 @@ const MatchDetails = () => {
                   {firstSquad && firstSquad.members.includes(wallet.publicKey?.toBase58()) && (
                     <Link href={`/squads/${firstSquad.address}`}>
                       <MatchSquadComponent squad={firstSquad} />
+                      {matchComplete && metadata?.winner === secondSquad.address && 
+                        <BaseIcon path={mdiCheckDecagram} size={22} className="text-blue-400" />
+                      }
                     </Link>
                   )}
                   {firstSquad && !firstSquad.members.includes(wallet.publicKey?.toBase58()) && (
@@ -250,6 +284,11 @@ const MatchDetails = () => {
                     secondSquad.members.includes(wallet.publicKey?.toBase58()) && (
                       <Link href={`/squads/${secondSquad.address}`}>
                         <MatchSquadComponent squad={secondSquad} />
+                        {matchComplete && metadata?.winner === secondSquad.address && 
+                          <div className='flex justify-center'>
+                            <BaseIcon path={mdiCheckDecagram} size={128} className="text-green-400 mt-2" />
+                          </div>
+                        }
                       </Link>
                     )}
                   {firstSquad &&
@@ -308,7 +347,9 @@ const MatchDetails = () => {
                         )}
 
                         {values.squad1ThirdGame && values.squad2ThirdGame && isCompleting && (
+                          <div className='flex items-center justify-center'>
                           <LoadingIndicator />
+                          </div>
                         )}
                         {values.squad1ThirdGame && values.squad2ThirdGame && !isCompleting && (
                           <div className="grid place-items-center">
@@ -335,10 +376,17 @@ const MatchDetails = () => {
                   </div>
                 </div>
               )}
-              {matchComplete && (
+              {matchComplete && !metadata?.winner && (
                 <div className="grid place-items-center mb-6">
                   <div className="text-gray-500 dark:text-slate-400">
                     <b>Match Summary Coming Soon...</b>
+                  </div>
+                </div>
+              )}
+              {matchComplete && winningSquad && (
+                <div className="grid place-items-center mb-6">
+                  <div className="text-gray-500 dark:text-slate-400">
+                    <b>The winner is <span className={colorsOutline['success']}>{getSquadName(new PublicKey(winningSquad.address))}</span></b>
                   </div>
                 </div>
               )}
@@ -375,6 +423,24 @@ const MatchDetails = () => {
                 </>
               )}
 
+              {metadata?.score && 
+                <><div className="flex items-center justify-between">
+                  <div>
+                    <b>{getSquadName(new PublicKey(metadata.score[0].squad))} results</b>
+                  </div>
+                  <p>{metadata.score[0].score.reduce((p, r) => p + `${r} `, '')}</p>
+                </div><BaseDivider /></>
+              }
+
+              {metadata?.score && 
+                <><div className="flex items-center justify-between">
+                  <div>
+                    <b>{getSquadName(new PublicKey(metadata.score[1].squad))} results</b>
+                  </div>
+                  <p>{metadata.score[1].score.reduce((p, r) => p + `${r} `, '')}</p>
+                </div><BaseDivider /></>
+              }
+
               {match.endDate && (
                 <>
                   <div className="flex items-center justify-between">
@@ -385,6 +451,22 @@ const MatchDetails = () => {
                       </div>
                     </div>
                     <p>{match.endDate.toDateString()}</p>
+                  </div>
+
+                  <BaseDivider />
+                </>
+              )}
+
+              {metadata?.description && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <b>Description</b>
+                      <div className="text-gray-500 dark:text-slate-400">
+                        <small>The match description.</small>
+                      </div>
+                    </div>
+                    <p>{metadata.description}</p>
                   </div>
 
                   <BaseDivider />
@@ -418,8 +500,10 @@ const MatchDetails = () => {
                 </div>
                 <p>{match.updatedAt.toDateString()}</p>
               </div>
+
             </CardBox>
           </div>
+          
         </div>
       </SectionMain>
     </>

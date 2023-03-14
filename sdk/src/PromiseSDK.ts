@@ -462,6 +462,7 @@ export class PromiseSDK {
       createdAt: new Date(promise.createdAt.toNumber() * 1000),
       updatedAt: new Date(promise.updatedAt.toNumber() * 1000),
       numberOfPromisees: promise.numPromisees,
+      uri: promise.uri ?? '',
     };
   }
 
@@ -485,6 +486,7 @@ export class PromiseSDK {
         createdAt: new Date(promise.account.createdAt.toNumber() * 1000),
         updatedAt: new Date(promise.account.updatedAt.toNumber() * 1000),
         numberOfPromisees: promise.account.numPromisees,
+        uri: promise.account.uri ?? '',
       };
     });
   }
@@ -499,7 +501,8 @@ export class PromiseSDK {
   public async createPromise(
     promisor: Promisor,
     promisorRuleset: PromisorRuleset,
-    promiseeRuleset: PromiseeRuleset
+    promiseeRuleset: PromiseeRuleset,
+    uri?: string
   ): Promise<PromiseProtocol> {
     const [method, promiseAccount] = this._buildCreatePromise(
       promisor.address,
@@ -507,7 +510,8 @@ export class PromiseSDK {
       promisor.numberOfPromises + 1,
       promisorRuleset,
       promiseeRuleset,
-      this.wallet.publicKey
+      this.wallet.publicKey,
+      uri
     );
 
     const signature = await method.rpc();
@@ -535,7 +539,8 @@ export class PromiseSDK {
     id: number,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string
   ): Promise<TransactionInstruction> {
     return await this._buildCreatePromise(
       promisor,
@@ -543,7 +548,8 @@ export class PromiseSDK {
       id,
       promisorRuleset,
       promiseeRuleset,
-      owner
+      owner,
+      uri,
     )[0].instruction();
   }
 
@@ -553,7 +559,8 @@ export class PromiseSDK {
     id: number,
     promisorRuleset: PromisorRuleset,
     promiseeRuleset: PromiseeRuleset,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string
   ): [PromiseMethods, PublicKey] {
     const promisorData = promisorRuleset.toData();
     const promiseeData = promiseeRuleset.toData();
@@ -565,7 +572,7 @@ export class PromiseSDK {
 
     return [
       this.program.methods
-        .initializePromise(id, promisorData, promiseeData, promiseBump)
+        .initializePromise(id, promisorData, promiseeData, promiseBump, uri ?? null)
         .accounts({
           promise: promiseAccount,
           promisor: promisor,
@@ -812,14 +819,16 @@ export class PromiseSDK {
    */
   public async completePromise(
     promise: PromiseProtocol,
-    promisee: Promisee
+    promisee: Promisee,
+    uri?: string
   ): Promise<PromiseProtocol> {
     const signature = await this._buildCompletePromise(
       promise.address,
       promise.promisor,
       promisee.address,
       promisee.owner,
-      this.wallet.publicKey
+      this.wallet.publicKey,
+      uri
     ).rpc();
 
     await this.confirmTransaction(signature);
@@ -860,10 +869,11 @@ export class PromiseSDK {
     promisor: PublicKey,
     promisee: PublicKey,
     promiseeOwner: PublicKey,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string,
   ): PromiseMethods {
     return this.program.methods
-      .updatePromiseCompleted()
+      .updatePromiseCompleted(uri ?? null)
       .accounts({
         promisee: promisee,
         promisor: promisor,
