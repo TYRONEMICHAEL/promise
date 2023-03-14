@@ -14,10 +14,12 @@ import { asideLgToggle, asideMobileToggle, setIsAsideMobileExpanded } from '../s
 
 type Props = {
   requiresWallet?: boolean
+  showsNavBar?: boolean
+  isTransparent?: boolean
   children: ReactNode
 }
 
-export default function LayoutApp({ requiresWallet = true, children }: Props) {
+export default function LayoutApp({ requiresWallet = true, showsNavBar = true, isTransparent = false, children }: Props) {
   const dispatch = useAppDispatch()
   const darkMode = useAppSelector((state) => state.style.darkMode)
   const isConnected = useAppSelector((state) => state.main.isConnected)
@@ -49,7 +51,8 @@ export default function LayoutApp({ requiresWallet = true, children }: Props) {
           isAsideMobileExpanded ? 'ml-60 lg:ml-0' : ''
         } pt-14 min-h-screen w-screen transition-position lg:w-auto bg-gray-50 dark:bg-slate-800 dark:text-slate-100`}
       >
-        <NavBar className={`${layoutAsidePadding} ${isAsideMobileExpanded ? 'ml-60 lg:ml-0' : ''}`}>
+        {isConnected && showsNavBar && <>
+          <NavBar isTransparent={isTransparent} className={`${layoutAsidePadding} ${isAsideMobileExpanded ? 'ml-60 lg:ml-0' : ''}`}>
           <NavBarItemPlain display="flex lg:hidden" onClick={() => dispatch(asideMobileToggle())}>
             <BaseIcon path={isAsideMobileExpanded ? mdiBackburger : mdiForwardburger} size="24" />
           </NavBarItemPlain>
@@ -60,6 +63,7 @@ export default function LayoutApp({ requiresWallet = true, children }: Props) {
             <BaseIcon path={mdiMenu} size="24" />
           </NavBarItemPlain>
         </NavBar>
+        </>}
         {isConnected && <AsideMenu menu={menu} />}
         {(!requiresWallet || isConnected) && children}
         {requiresWallet && !isConnected && <RequiresWallet />}

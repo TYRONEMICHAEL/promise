@@ -23,7 +23,7 @@ import { SnackBarPushedMessage } from '../../interfaces'
 import { SquadTransaction, statusToString } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
 import { getMatchesForSquad } from '../../services/matches'
-import { approveTransactionForSquad, getAuthorityKeyForSquad } from '../../services/squads'
+import { approveTransactionForSquad, getAuthorityKeyForSquad, getSquadStatsForMatches } from '../../services/squads'
 import { useAppDispatch } from '../../stores/hooks'
 import { pushMessage } from '../../stores/snackBarSlice'
 import { catchAll, truncate } from '../../utils/helpers'
@@ -36,7 +36,7 @@ const SquadDetails = () => {
   const [isAccepting, setIsAccepting] = useState(false)
   const [squads, isLoadingSquads] = useSquads()
   const [isLoadingMatches, setIsLoadingMatches] = useState(false)
-  const [matches, setMatches] = useState([])
+  const [matchStats, setMatchStats] = useState(null)
 
   const { address } = router.query
   const squad = squads.find((squad) => squad.address == address)
@@ -46,12 +46,13 @@ const SquadDetails = () => {
     if (!squad) return
     setIsLoadingMatches(true)
     getMatchesForSquad(squad)
-      .then(setMatches)
+      .then((matches) => getSquadStatsForMatches(squad, matches))
+      .then(setMatchStats)
       .catch(catchAll(dispatch))
       .finally(() => {
         setIsLoadingMatches(false)
       })
-  }, [dispatch, setIsLoadingMatches, setMatches, squad])
+  }, [dispatch, setIsLoadingMatches, setMatchStats, squad])
 
   const approveTransaction = async (transaction) => {
     setIsAccepting(true)
@@ -113,12 +114,44 @@ const SquadDetails = () => {
                       excludeButton
                     />
                     <CardBox>
+                      {/* <div className="flex items-center justify-between">
+                      <UserCardProfileNumber
+                        number={matchStats ? matchStats.numberOfMatches : 0}
+                        label="Total"
+                      />
+                      <UserCardProfileNumber
+                        className={colorsOutline['success']}
+                        number={matchStats ? matchStats.numberOfWins : 0}
+                        label="Wins"
+                      />
+                      <UserCardProfileNumber
+                        className={colorsOutline['danger']}
+                        number={matchStats ? matchStats.numberOfLosses : 0}
+                        label="Losses"
+                      />
+                      </div> */}
                       <div className="flex items-center justify-between">
                         <div>
                           <b>Number of Matches</b>
                         </div>
                         {isLoadingMatches && <LoadingIndicator />}
-                        {!isLoadingMatches && <>{matches.length}</>}
+                        {!isLoadingMatches && <>{matchStats ? matchStats.numberOfMatches : 0}</>}
+                      </div>
+                      <BaseDivider />
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <b>Number of Wins</b>
+                        </div>
+                        {isLoadingMatches && <LoadingIndicator />}
+                        {!isLoadingMatches && <>{matchStats ? matchStats.numberOfWins : 0}</>}
+                      </div>
+                      <BaseDivider />
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <b>Number of Losses</b>
+                        </div>
+                        {isLoadingMatches && <LoadingIndicator />}
+                        {!isLoadingMatches && <>{matchStats ? matchStats.numberOfLosses : 0}</>}
                       </div>
                     </CardBox>
                   </div>

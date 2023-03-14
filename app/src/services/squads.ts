@@ -1,11 +1,13 @@
-import { Commitment, Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
+import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js'
 import { getMsPDA, getTxPDA } from '@sqds/sdk'
 import BN from 'bn.js'
 import { squadsInstance, squadsProgram } from '../env'
+import { Match } from '../interfaces/matches'
 import {
   Squad,
   SquadExecutionStatus,
   SquadInstruction,
+  SquadStats,
   SquadStatus,
   SquadTransaction,
   maxNumberOfMembersPerSquad,
@@ -13,6 +15,7 @@ import {
 } from '../interfaces/squads'
 import { sendAndConfirm } from '../utils/helpers'
 import { getConnection, getWallet } from './account'
+import { retrieveMatchMetadata } from './ipfs'
 
 export const getSquads: () => Promise<Squad[]> = async () => {
   const wallet = getWallet()
@@ -197,6 +200,25 @@ export const getSquadForTransaction: (transactionAddress: string) => Promise<Squ
   const squad = await program.account.ms.fetch(transaction.ms)
 
   return await multiSigToSquad(squad)
+}
+
+export const getSquadStatsForMatches: (
+  squad: Squad,
+  matches: Match[]
+) => Promise<SquadStats> = async (squad: Squad, matches: Match[]) => {
+  const validMatches = matches.filter((match) => match.uri !== null && match.uri.length > 0)
+  const matchesMetadata = await Promise.all(
+    validMatches.map((match) => retrieveMatchMetadata(match.uri))
+  )
+  const numberOfWins = matchesMetadata.filter((metadata) => metadata.winner == squad.address).length
+  const numberOfLosses = validMatches.length - numberOfWins
+
+  return {
+    numberOfMatches: matches.length,
+    numberOfWins,
+    numberOfLosses,
+    winRate: numberOfWins / Math.max(1, numberOfLosses),
+  }
 }
 
 const getSquadsSDK = () => {

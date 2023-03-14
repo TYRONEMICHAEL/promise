@@ -1,5 +1,4 @@
 import { PacmanLoader } from 'react-spinners'
-import SectionFullScreen from './SectionFullScreen'
 
 export const PageLoadingIndicator = () => {
   return (

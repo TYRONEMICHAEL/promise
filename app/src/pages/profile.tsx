@@ -1,10 +1,4 @@
-import {
-  mdiAccount,
-  mdiAccountMultiple,
-  mdiAccountMultiplePlus,
-  mdiTableTennis,
-  mdiTennisBall,
-} from '@mdi/js'
+import { mdiAccount } from '@mdi/js'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { ReactElement, useEffect, useState } from 'react'
 import SectionMain from '../components/SectionMain'
@@ -13,7 +7,6 @@ import CardBoxHistory from '../customComponents/CardBoxHistory'
 import CardBoxMatches from '../customComponents/CardBoxMatches'
 import CardBoxSquad from '../customComponents/CardBoxSquads'
 import MatchInvoices from '../customComponents/MatchInvoices'
-import MatchInvoice from '../customComponents/MatchInvoices'
 import SquadCardDetails from '../customComponents/SquadCardDetail'
 import { UserAvatarType } from '../customComponents/UserAvatar'
 import UserCard from '../customComponents/UserCard'
@@ -21,7 +14,6 @@ import LayoutApp from '../layouts/App'
 import { getWalletBalance } from '../services/account'
 import { useAppDispatch } from '../stores/hooks'
 import { setAccountInfo } from '../stores/mainSlice'
-import BaseButton from '../components/BaseButton'
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch()

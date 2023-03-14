@@ -99,12 +99,6 @@ export const MatchComponent = ({ match }: Props) => {
               </div>
             </div>
           )}
-          {/* <div>
-            {!isLoading && squadsInMatch.length <= 0 && (
-              <h1 className="text-3xl leading-tight font-semibold">0</h1>
-            )}
-            {!isLoading && squadsInMatch.length > 0 && }
-          </div> */}
           <BaseIcon
             path={mdiTableTennis}
             size="48"
