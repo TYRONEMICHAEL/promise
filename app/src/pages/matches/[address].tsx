@@ -21,7 +21,7 @@ import SectionTitleLineWithButton from '../../components/SectionTitleLineWithBut
 import { getPageTitle } from '../../config'
 import { useMatches } from '../../hooks/matches'
 import { useSquads } from '../../hooks/squads'
-import { stateToString } from '../../interfaces/matches'
+import { MatchMetadata, stateToString } from '../../interfaces/matches'
 import { Squad } from '../../interfaces/squads'
 import LayoutApp from '../../layouts/App'
 import { retrieveMatchMetadata } from '../../services/ipfs'
@@ -39,7 +39,7 @@ const MatchDetails = () => {
   const [squadsInMatch, setSquadsInMatch] = useState([])
   const [squads] = useSquads()
   const [matches] = useMatches(false)
-  const [metadata, setMetadata] = useState(undefined)
+  const [metadata, setMetadata] = useState<MatchMetadata>(undefined)
 
   const { address } = router.query
   const match = matches.find((match) => match.address == address)
@@ -57,6 +57,7 @@ const MatchDetails = () => {
   }, [dispatch, match, setIsAccepting, setSquadsInMatch])
 
   useEffect(() => {
+    console.log(match)
     if (match?.uri) {
       retrieveMatchMetadata(match.uri).then(setMetadata);
     } 
@@ -92,8 +93,17 @@ const MatchDetails = () => {
     const game2 = squad1SecondGame > squad2SecondGame ? 1 : 0
     const game3 = squad1ThirdGame > squad2ThirdGame ? 1 : 0
     const score = game1 + game2 + game3
+    const winner = score > 1 ? firstSquad : secondSquad
+    const matchResultMetadata = { 
+      winner: winner.address, 
+      score: [
+        { squad: firstSquad.address, score: [squad1FirstGame, squad1SecondGame, squad1ThirdGame ] },
+        { squad: secondSquad.address, score: [squad2FirstGame, squad2SecondGame, squad2ThirdGame ] },
+      ] 
+    }
+    const completedMetadata = { ...metadata, ...matchResultMetadata }
     setIsCompleting(true)
-    completeMatch(match, score > 1 ? firstSquad : secondSquad)
+    completeMatch(match, winner, completedMetadata)
       .then(() => {
         router.reload()
       })
@@ -397,6 +407,22 @@ const MatchDetails = () => {
                       </div>
                     </div>
                     <p>{match.endDate.toDateString()}</p>
+                  </div>
+
+                  <BaseDivider />
+                </>
+              )}
+
+              {metadata?.description && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <b>Description</b>
+                      <div className="text-gray-500 dark:text-slate-400">
+                        <small>The match description.</small>
+                      </div>
+                    </div>
+                    <p>{metadata.description}</p>
                   </div>
 
                   <BaseDivider />

@@ -20,13 +20,13 @@ export type Match = {
 
 export type MatchMetadataResult = {
   result: number[];
-  promisee: PublicKey;
+  squad: string;
 }
 
 export type MatchMetadata = {
   name?: string
   description?: string
-  winner?: PublicKey
+  winner?: string
   results?: [MatchMetadataResult, MatchMetadataResult]
 }
 
