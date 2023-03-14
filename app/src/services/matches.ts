@@ -62,7 +62,7 @@ export const createMatch: (matchDetails: MatchDetails, squad?: Squad) => Promise
     const [hash] = await pinMatchMetadata(matchDetails.metadata)
     uri = hash
   }
-  
+
   if (promisor) {
     promisePDA = promiseSDK.getPromisePDA(
       promiseNetworkPublicKey,
@@ -172,11 +172,7 @@ export const getMatchesForUser: () => Promise<Match[]> = async () => {
   return matches.flat()
 }
 
-export const completeMatch = async (
-  match: Match,
-  squad: Squad,
-  matchMetada?: MatchMetadata
-) => {
+export const completeMatch = async (match: Match, squad: Squad, matchMetada?: MatchMetadata) => {
   const promiseSDK = getPromiseSDK()
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
   const owner = getAuthorityKeyForSquad(squad.address)

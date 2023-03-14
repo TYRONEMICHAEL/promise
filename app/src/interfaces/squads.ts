@@ -49,6 +49,13 @@ export type SquadInstruction = {
   executed: boolean
 }
 
+export type SquadStats = {
+  numberOfMatches: number
+  numberOfWins: number
+  numberOfLosses: number
+  winRate: number
+}
+
 export const toSquadExecutionStatus = (state) => {
   if (state['executeReady'] != null) {
     return SquadExecutionStatus.ready

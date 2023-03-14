@@ -462,7 +462,7 @@ export class PromiseSDK {
       createdAt: new Date(promise.createdAt.toNumber() * 1000),
       updatedAt: new Date(promise.updatedAt.toNumber() * 1000),
       numberOfPromisees: promise.numPromisees,
-      uri: promise.uri ?? '',
+      uri: promise.uri ?? "",
     };
   }
 
@@ -486,7 +486,7 @@ export class PromiseSDK {
         createdAt: new Date(promise.account.createdAt.toNumber() * 1000),
         updatedAt: new Date(promise.account.updatedAt.toNumber() * 1000),
         numberOfPromisees: promise.account.numPromisees,
-        uri: promise.account.uri ?? '',
+        uri: promise.account.uri ?? "",
       };
     });
   }
@@ -496,6 +496,7 @@ export class PromiseSDK {
    * @param promisor Promisor that owns the Promise.
    * @param promisorRuleset Ruleset for the Promisor.
    * @param promiseeRuleset Ruleset for the Promisee.
+   * @param uri Uri for the Promise.
    * @returns Newly created Promise.
    */
   public async createPromise(
@@ -531,6 +532,7 @@ export class PromiseSDK {
    * @param promisorRuleset Ruleset for the Promisor.
    * @param promiseeRuleset Ruleset for the Promisee.
    * @param owner Owner of the Promise/Promisor.
+   * @param uri Uri for the Promise.
    * @returns An instruction that creates a Promise.
    */
   public async buildCreatePromise(
@@ -549,7 +551,7 @@ export class PromiseSDK {
       promisorRuleset,
       promiseeRuleset,
       owner,
-      uri,
+      uri
     )[0].instruction();
   }
 
@@ -572,7 +574,13 @@ export class PromiseSDK {
 
     return [
       this.program.methods
-        .initializePromise(id, promisorData, promiseeData, promiseBump, uri ?? null)
+        .initializePromise(
+          id,
+          promisorData,
+          promiseeData,
+          promiseBump,
+          uri ?? null
+        )
         .accounts({
           promise: promiseAccount,
           promisor: promisor,
@@ -815,6 +823,7 @@ export class PromiseSDK {
    * Sets a Promise to complete and assigns the Promisee with the reward.
    * @param promise Promise to complete.
    * @param promisee Promisee to transfer the reward.
+   * @param uri Uri for the Promise.
    * @returns Updated Promise.
    */
   public async completePromise(
@@ -846,6 +855,7 @@ export class PromiseSDK {
    * @param promisee Promisee that completed the Promise.
    * @param promiseeOwner Owner to transfer the rewards.
    * @param owner Owner of the Promise.
+   * @param uri Uri for the Promise.
    * @returns An instruction that completes a Promise.
    */
   public async buildCompletePromise(
@@ -853,14 +863,16 @@ export class PromiseSDK {
     promisor: PublicKey,
     promisee: PublicKey,
     promiseeOwner: PublicKey,
-    owner: PublicKey
+    owner: PublicKey,
+    uri?: string
   ): Promise<TransactionInstruction> {
     return await this._buildCompletePromise(
       promise,
       promisor,
       promisee,
       promiseeOwner,
-      owner
+      owner,
+      uri
     ).instruction();
   }
 
@@ -870,7 +882,7 @@ export class PromiseSDK {
     promisee: PublicKey,
     promiseeOwner: PublicKey,
     owner: PublicKey,
-    uri?: string,
+    uri?: string
   ): PromiseMethods {
     return this.program.methods
       .updatePromiseCompleted(uri ?? null)
@@ -968,7 +980,7 @@ export class PromiseSDK {
         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
         signature,
       },
-      "confirmed"
+      "finalized"
     );
 
     if (result.value.err != null) {

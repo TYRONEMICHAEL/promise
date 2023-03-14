@@ -72,10 +72,6 @@ const MatchDetails = () => {
     } 
   }, [metadata, squads, winningSquad])
 
-  useEffect(() => {
-    console.log('metadata', metadata)
-  }, [metadata])
-
   const acceptMatchAction = async ({ squad }) => {
     const selected = squads.find((sq) => sq.address == squad)
     if (selected == undefined) return
@@ -305,12 +301,12 @@ const MatchDetails = () => {
                   </div>
                   <Formik
                     initialValues={{
-                      squad1FirstGame: null,
-                      squad2FirstGame: null,
-                      squad1SecondGame: null,
-                      squad2SecondGame: null,
-                      squad1ThirdGame: null,
-                      squad2ThirdGame: null,
+                      squad1FirstGame: '',
+                      squad2FirstGame: '',
+                      squad1SecondGame: '',
+                      squad2SecondGame: '',
+                      squad1ThirdGame: '',
+                      squad2ThirdGame: '',
                     }}
                     onSubmit={(values) => completeMatchAction(values)}
                   >
