@@ -604,9 +604,9 @@ class PromiseSDK {
      * @param promisee Promisee to transfer the reward.
      * @returns Updated Promise.
      */
-    completePromise(promise, promisee) {
+    completePromise(promise, promisee, uri) {
         return __awaiter(this, void 0, void 0, function* () {
-            const signature = yield this._buildCompletePromise(promise.address, promise.promisor, promisee.address, promisee.owner, this.wallet.publicKey).rpc();
+            const signature = yield this._buildCompletePromise(promise.address, promise.promisor, promisee.address, promisee.owner, this.wallet.publicKey, uri).rpc();
             yield this.confirmTransaction(signature);
             const completedPromise = yield this.getPromise(promise.address);
             if (completedPromise == null)

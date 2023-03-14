@@ -19,7 +19,7 @@ export type Match = {
 }
 
 export type MatchMetadataResult = {
-  result: number[];
+  score: number[];
   squad: string;
 }
 
@@ -27,7 +27,7 @@ export type MatchMetadata = {
   name?: string
   description?: string
   winner?: string
-  results?: [MatchMetadataResult, MatchMetadataResult]
+  score?: [MatchMetadataResult, MatchMetadataResult]
 }
 
 export const stateToString = (state: PromiseState) => {

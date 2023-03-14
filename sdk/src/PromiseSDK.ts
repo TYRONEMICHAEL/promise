@@ -819,14 +819,16 @@ export class PromiseSDK {
    */
   public async completePromise(
     promise: PromiseProtocol,
-    promisee: Promisee
+    promisee: Promisee,
+    uri?: string
   ): Promise<PromiseProtocol> {
     const signature = await this._buildCompletePromise(
       promise.address,
       promise.promisor,
       promisee.address,
       promisee.owner,
-      this.wallet.publicKey
+      this.wallet.publicKey,
+      uri
     ).rpc();
 
     await this.confirmTransaction(signature);

@@ -244,7 +244,7 @@ export declare class PromiseSDK {
      * @param promisee Promisee to transfer the reward.
      * @returns Updated Promise.
      */
-    completePromise(promise: PromiseProtocol, promisee: Promisee): Promise<PromiseProtocol>;
+    completePromise(promise: PromiseProtocol, promisee: Promisee, uri?: string): Promise<PromiseProtocol>;
     /**
      * Builds an instruction that sets a Promise to complete and assigns the Promisee with the reward.
      * @param promise Promise to complete.

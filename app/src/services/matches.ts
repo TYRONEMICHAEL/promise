@@ -172,9 +172,10 @@ export const getMatchesForUser: () => Promise<Match[]> = async () => {
   return matches.flat()
 }
 
-export const completeMatch: (match: Match, squad: Squad, matchMetada?: MatchMetadata) => Promise<boolean> = async (
+export const completeMatch = async (
   match: Match,
-  squad: Squad
+  squad: Squad,
+  matchMetada?: MatchMetadata
 ) => {
   const promiseSDK = getPromiseSDK()
   const promise = await promiseSDK.getPromise(new PublicKey(match.address))
@@ -191,8 +192,14 @@ export const completeMatch: (match: Match, squad: Squad, matchMetada?: MatchMeta
     return false
   }
 
-  await promiseSDK.completePromise(promise, promisee)
-  return true
+  let uri: string | null = null
+  if (matchMetada) {
+    const [hash] = await pinMatchMetadata(matchMetada)
+    uri = hash
+  }
+
+  await promiseSDK.completePromise(promise, promisee, uri)
+  return false
 }
 
 const getPromiseSDK = () => {
