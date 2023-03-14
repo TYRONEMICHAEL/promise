@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { ReactElement } from 'react'
 import BaseButton from '../../components/BaseButton'
 import CardBoxComponentEmpty from '../../components/CardBoxComponentEmpty'
-import { LoadingIndicator } from '../../components/LoadingIndicator'
 import { MatchComponent } from '../../components/MatchComponent'
+import { PageLoadingIndicator } from '../../components/PageLoadingIndicator'
 import SectionMain from '../../components/SectionMain'
 import SectionTitleLineWithButton from '../../components/SectionTitleLineWithButton'
 import { getPageTitle } from '../../config'
@@ -31,7 +31,7 @@ const MatchesPage = () => {
             small
           />
         </SectionTitleLineWithButton>
-        {isLoadingAllMatches && <LoadingIndicator />}
+        {isLoadingAllMatches && <PageLoadingIndicator />}
         {!isLoadingAllMatches && allMatches.length <= 0 && (
           <CardBoxComponentEmpty message="Currently don't have any active matches" />
         )}

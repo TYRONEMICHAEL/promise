@@ -1,4 +1,10 @@
-import { mdiAccount, mdiAccountMultiple } from '@mdi/js'
+import {
+  mdiAccount,
+  mdiAccountMultiple,
+  mdiAccountMultiplePlus,
+  mdiTableTennis,
+  mdiTennisBall,
+} from '@mdi/js'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { ReactElement, useEffect, useState } from 'react'
 import SectionMain from '../components/SectionMain'
@@ -15,6 +21,7 @@ import LayoutApp from '../layouts/App'
 import { getWalletBalance } from '../services/account'
 import { useAppDispatch } from '../stores/hooks'
 import { setAccountInfo } from '../stores/mainSlice'
+import BaseButton from '../components/BaseButton'
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch()
@@ -41,7 +48,7 @@ const ProfilePage = () => {
         <SectionTitleLineWithButton icon={mdiAccount} title="Profile" main excludeButton />
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
           <UserCard avatar={UserAvatarType.avatar} />
-          <div className='flex-1'>
+          <div className="flex-1">
             <CardBoxSquad />
             <CardBoxMatches />
             <CardBoxHistory />
@@ -49,15 +56,12 @@ const ProfilePage = () => {
         </div>
       </SectionMain>
       <SectionMain>
-        
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-          <div className='flex-1'>
-            <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Squads" main excludeButton />
+          <div className="flex-1">
             <SquadCardDetails />
           </div>
-          <div className='flex-1'>
-            <SectionTitleLineWithButton icon={mdiAccountMultiple} title="Matches" main excludeButton />
-            <MatchInvoices  />
+          <div className="flex-1">
+            <MatchInvoices />
           </div>
         </div>
       </SectionMain>
