@@ -173,6 +173,7 @@ export declare class PromiseSDK {
      * @param promisor Promisor that owns the Promise.
      * @param promisorRuleset Ruleset for the Promisor.
      * @param promiseeRuleset Ruleset for the Promisee.
+     * @param uri Uri for the Promise.
      * @returns Newly created Promise.
      */
     createPromise(promisor: Promisor, promisorRuleset: PromisorRuleset, promiseeRuleset: PromiseeRuleset, uri?: string): Promise<PromiseProtocol>;
@@ -184,6 +185,7 @@ export declare class PromiseSDK {
      * @param promisorRuleset Ruleset for the Promisor.
      * @param promiseeRuleset Ruleset for the Promisee.
      * @param owner Owner of the Promise/Promisor.
+     * @param uri Uri for the Promise.
      * @returns An instruction that creates a Promise.
      */
     buildCreatePromise(promisor: PublicKey, network: PublicKey, id: number, promisorRuleset: PromisorRuleset, promiseeRuleset: PromiseeRuleset, owner: PublicKey, uri?: string): Promise<TransactionInstruction>;
@@ -242,6 +244,7 @@ export declare class PromiseSDK {
      * Sets a Promise to complete and assigns the Promisee with the reward.
      * @param promise Promise to complete.
      * @param promisee Promisee to transfer the reward.
+     * @param uri Uri for the Promise.
      * @returns Updated Promise.
      */
     completePromise(promise: PromiseProtocol, promisee: Promisee, uri?: string): Promise<PromiseProtocol>;
@@ -252,9 +255,10 @@ export declare class PromiseSDK {
      * @param promisee Promisee that completed the Promise.
      * @param promiseeOwner Owner to transfer the rewards.
      * @param owner Owner of the Promise.
+     * @param uri Uri for the Promise.
      * @returns An instruction that completes a Promise.
      */
-    buildCompletePromise(promise: PublicKey, promisor: PublicKey, promisee: PublicKey, promiseeOwner: PublicKey, owner: PublicKey): Promise<TransactionInstruction>;
+    buildCompletePromise(promise: PublicKey, promisor: PublicKey, promisee: PublicKey, promiseeOwner: PublicKey, owner: PublicKey, uri?: string): Promise<TransactionInstruction>;
     private _buildCompletePromise;
     /**
      * ======================================================

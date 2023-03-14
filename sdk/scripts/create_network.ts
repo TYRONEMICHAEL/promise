@@ -10,7 +10,7 @@ const main = async () => {
   const authority = Keypair.generate();
   const promise = PromiseSDK.devnet(new NodeWallet.default(authority));
 
-  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+  const connection = new Connection(clusterApiUrl('devnet'), 'finalized');
   const airdropSignature = await connection.requestAirdrop(
     authority.publicKey,
     LAMPORTS_PER_SOL

@@ -360,7 +360,7 @@ class PromiseSDK {
                 createdAt: new Date(promise.createdAt.toNumber() * 1000),
                 updatedAt: new Date(promise.updatedAt.toNumber() * 1000),
                 numberOfPromisees: promise.numPromisees,
-                uri: (_a = promise.uri) !== null && _a !== void 0 ? _a : '',
+                uri: (_a = promise.uri) !== null && _a !== void 0 ? _a : "",
             };
         });
     }
@@ -386,7 +386,7 @@ class PromiseSDK {
                     createdAt: new Date(promise.account.createdAt.toNumber() * 1000),
                     updatedAt: new Date(promise.account.updatedAt.toNumber() * 1000),
                     numberOfPromisees: promise.account.numPromisees,
-                    uri: (_a = promise.account.uri) !== null && _a !== void 0 ? _a : '',
+                    uri: (_a = promise.account.uri) !== null && _a !== void 0 ? _a : "",
                 };
             });
         });
@@ -396,6 +396,7 @@ class PromiseSDK {
      * @param promisor Promisor that owns the Promise.
      * @param promisorRuleset Ruleset for the Promisor.
      * @param promiseeRuleset Ruleset for the Promisee.
+     * @param uri Uri for the Promise.
      * @returns Newly created Promise.
      */
     createPromise(promisor, promisorRuleset, promiseeRuleset, uri) {
@@ -417,6 +418,7 @@ class PromiseSDK {
      * @param promisorRuleset Ruleset for the Promisor.
      * @param promiseeRuleset Ruleset for the Promisee.
      * @param owner Owner of the Promise/Promisor.
+     * @param uri Uri for the Promise.
      * @returns An instruction that creates a Promise.
      */
     buildCreatePromise(promisor, network, id, promisorRuleset, promiseeRuleset, owner, uri) {
@@ -602,6 +604,7 @@ class PromiseSDK {
      * Sets a Promise to complete and assigns the Promisee with the reward.
      * @param promise Promise to complete.
      * @param promisee Promisee to transfer the reward.
+     * @param uri Uri for the Promise.
      * @returns Updated Promise.
      */
     completePromise(promise, promisee, uri) {
@@ -621,11 +624,12 @@ class PromiseSDK {
      * @param promisee Promisee that completed the Promise.
      * @param promiseeOwner Owner to transfer the rewards.
      * @param owner Owner of the Promise.
+     * @param uri Uri for the Promise.
      * @returns An instruction that completes a Promise.
      */
-    buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner) {
+    buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner, uri) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this._buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner).instruction();
+            return yield this._buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner, uri).instruction();
         });
     }
     _buildCompletePromise(promise, promisor, promisee, promiseeOwner, owner, uri) {
@@ -719,7 +723,7 @@ class PromiseSDK {
                 blockhash: latestBlockHash.blockhash,
                 lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
                 signature,
-            }, "confirmed");
+            }, "finalized");
             if (result.value.err != null) {
                 throw result.value.err;
             }
