@@ -1,5 +1,11 @@
 # two x two
 
+## Try it out now
+
+You can try out the Promise protocol and two x two on devnet using the following link: https://promise-ok1cx9ty4-tyronemichael.vercel.app
+
+> Please note this is using Devnet and it can take a while to sign transactions.
+
 ## Table of Contents
 
 * [Quick Start](#quick-start)
