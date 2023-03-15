@@ -22,6 +22,7 @@ You can try out the Promise protocol and two x two on devnet using the following
 We always encourge improvements, and suggestions. Contact us on Twitter or submit PR's
 
 - [@tyroneavnit](https://docs.google.com/presentation/d/1n5b67T82S9r0yWNF3g4_aVToc5Jkl6_X4RpYa4RDdf4/edit?usp=sharing)
+- [@justinjguedes](https://twitter.com/JustinJGuedes)
 
 ## Useful Links
 
