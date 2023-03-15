@@ -1,5 +1,5 @@
 # two x two
-![alt text](https://twitter.com/two_x_two_rack/photo)
+![alt text](https://pbs.twimg.com/profile_images/1635722071564058639/fbb3wxwY_400x400.jpg)
 
 - [two x two](https://twitter.com/two_x_two_rack)
 
