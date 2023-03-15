@@ -1,9 +1,14 @@
-# Promise Protocol
+# Promise Protocol & two x two
 
-Welcome to the Promise protocol. This repository contains:
+We’re a unique concept born from an idea to get more people to use Web3 and based on the basic human need for accountability.
 
-* Program
-* SDK (Documentation coming soon)
+- [two x two](https://twitter.com/two_x_two_rack)
+- [Promise Protocol](https://twitter.com/promiseproto)
+
+This repository contains:
+
+* [Program](/program/README.md)
+* Promise Protocol SDK (Documentation coming soon)
 * [App](/app/README.md)
 
 ## Try it out now
@@ -11,6 +16,12 @@ Welcome to the Promise protocol. This repository contains:
 You can try out the Promise protocol and two x two on devnet using the following link: https://promise-ok1cx9ty4-tyronemichael.vercel.app
 
 > Please note this is using Devnet and it can take a while to sign transactions.
+
+## Contact us
+
+We always encourge improvements, and suggestions. Contact us on Twitter or submit PR's
+
+- [@tyroneavnit](https://docs.google.com/presentation/d/1n5b67T82S9r0yWNF3g4_aVToc5Jkl6_X4RpYa4RDdf4/edit?usp=sharing)
 
 ## Useful Links
 

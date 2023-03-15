@@ -1,4 +1,10 @@
 # two x two
+![alt text](https://twitter.com/two_x_two_rack/photo)
+
+- [two x two](https://twitter.com/two_x_two_rack)
+
+two x two was imagined as a unique concept that could solve a basic human need - accountability - while showcasing the power of crypto and Web3 to everyday users.  as the game of padel (similar to squash, played two players against two players) is exploding in south africa, it’s the perfect use case in terms of appeal to a wide audience and ability to create partnerships in competition
+
 
 ## Try it out now
 
